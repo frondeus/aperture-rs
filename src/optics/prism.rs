@@ -1,8 +1,10 @@
-use super::{ReviewLike, SetLike, TraversalLike};
+use super::{AffineFold, ReviewLike, SetLike};
 
-pub trait PrismLike<'a, S, TM>: ReviewLike<'a, S> + TraversalLike<'a, S, TM> {}
+pub trait PrismLike<'a, S, TM>: ReviewLike<'a, S> + AffineFold<'a, S, TM> {}
 
-impl<'a, S, TM, P> PrismLike<'a, S, TM> for P where P: ReviewLike<'a, S> + TraversalLike<'a, S, TM> {}
+impl<'a, S, TM, P> PrismLike<'a, S, TM> for P where P: ReviewLike<'a, S> + AffineFold<'a, S, TM> {}
+
+pub struct IsPrism;
 
 pub struct At<T>(pub T);
 
@@ -17,7 +19,7 @@ where
     }
 }
 
-impl<'a, S, TM> TraversalLike<'a, Vec<S>, TM> for At<usize>
+impl<'a, S> AffineFold<'a, Vec<S>, IsPrism> for At<usize>
 where
     S: 'a,
 {
@@ -51,5 +53,52 @@ pub trait PrismVecExt<T> {
 impl<T> PrismVecExt<T> for Vec<T> {
     fn at(index: usize) -> At<usize> {
         At(index)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{
+        data::Person,
+        optics::{LensLike, Then},
+    };
+
+    use super::*;
+
+    fn is_lens<'a, L: LensLike<'a, S, G, M, T>, S, G, M, T>(_l: L) {}
+    fn is_person_prism<'a, P>(_p: P)
+    where
+        P: PrismLike<'a, Vec<Person>, IsPrism>,
+    {
+    }
+
+    #[test]
+    fn at() {
+        let mut olivier = Person {
+            age: 24,
+            name: "Olivier".into(),
+            parents: vec![
+                Person {
+                    age: 55,
+                    name: "Anne".to_string(),
+                    parents: vec![],
+                },
+                Person {
+                    age: 56,
+                    name: "Thierry".to_string(),
+                    parents: vec![],
+                },
+            ],
+        };
+
+        let parents_lens = (Person::parents, Person::parents_mut, Person::parents_opt);
+        let name_lens = (Person::name, Person::name_mut, Person::name_opt);
+
+        is_lens(parents_lens);
+        is_person_prism(At(0));
+        let res = parents_lens.then(At(0));
+        // let mothers_name = parents_lens.then(Vec::<Person>::at(0)).then(name_lens);
+
+        // assert_eq!(mothers_name.preview(&olivier).unwrap(), "Anne");
     }
 }

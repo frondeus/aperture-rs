@@ -1,23 +1,18 @@
-use super::{GetLike, SetLike, TraversalLike};
+use super::{AffineFold, GetLike, SetLike};
 
 mod ext;
-mod lens_and_lens;
-mod lens_and_prism {}
-mod traversal_and_lens {}
-mod prism_and_review {}
 mod tuple;
 
-pub use ext::{IntoLens, Then};
-pub use lens_and_lens::LensAndLens;
+pub use ext::IntoLens;
 
 pub trait LensLike<'a, S, GM, SM, TM>:
-    GetLike<'a, S, GM> + SetLike<'a, S, SM> + TraversalLike<'a, S, TM>
+    GetLike<'a, S, GM> + SetLike<'a, S, SM> + AffineFold<'a, S, TM>
 {
 }
 
 impl<'a, Src, GM1, SM1, TM1, L1> LensLike<'a, Src, GM1, SM1, TM1> for L1
 where
-    L1: GetLike<'a, Src, GM1> + SetLike<'a, Src, SM1> + TraversalLike<'a, Src, TM1>,
+    L1: GetLike<'a, Src, GM1> + SetLike<'a, Src, SM1> + AffineFold<'a, Src, TM1>,
     Src: 'a,
 {
 }
@@ -26,7 +21,10 @@ pub struct IsLens;
 
 #[cfg(test)]
 mod tests {
-    use crate::data::{Person, Test};
+    use crate::{
+        data::{Person, Test},
+        optics::Then,
+    };
 
     use super::*;
 
@@ -144,7 +142,7 @@ mod tests {
             f(&mut source.name)
         }
     }
-    impl<'a> TraversalLike<'a, Person, IsLens> for PersonName {
+    impl<'a> AffineFold<'a, Person, IsLens> for PersonName {
         type T = String;
 
         fn preview(&self, source: &'a Person) -> Option<&'a Self::T> {
@@ -170,7 +168,7 @@ mod tests {
             f(&mut source.parents[0])
         }
     }
-    impl<'a> TraversalLike<'a, Person, IsLens> for PersonMother {
+    impl<'a> AffineFold<'a, Person, IsLens> for PersonMother {
         type T = Person;
 
         fn preview(&self, source: &'a Person) -> Option<&'a Self::T> {

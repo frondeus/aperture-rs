@@ -1,4 +1,6 @@
-use super::*;
+use crate::optics::IsLens;
+use crate::optics::Then;
+use crate::optics::{AffineFold, GetLike, LensLike, SetLike};
 
 pub struct LensAndLens<L1, L2>(pub L1, pub L2);
 
@@ -44,10 +46,10 @@ where
     }
 }
 
-impl<'a, Src, M1, M2, L1, L2> TraversalLike<'a, Src, (IsLens, M1, M2)> for LensAndLens<L1, L2>
+impl<'a, Src, M1, M2, L1, L2> AffineFold<'a, Src, (IsLens, M1, M2)> for LensAndLens<L1, L2>
 where
-    L1: TraversalLike<'a, Src, M1>,
-    L2: TraversalLike<'a, L1::T, M2>,
+    L1: AffineFold<'a, Src, M1>,
+    L2: AffineFold<'a, L1::T, M2>,
     Src: 'a,
 {
     type T = L2::T;

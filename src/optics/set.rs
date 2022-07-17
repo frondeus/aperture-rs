@@ -4,12 +4,6 @@ pub trait SetLike<'a, S, Marker> {
     where
         F: FnOnce(&'a mut Self::T);
 }
-pub trait SetLikeOnce<'a, S> {
-    type T: 'a;
-    fn set_once<F>(self, source: &'a mut S, f: F)
-    where
-        F: FnOnce(&'a mut Self::T);
-}
 
 #[cfg(test)]
 mod tests {
@@ -31,8 +25,8 @@ mod tests {
             .set(&mut test, |x| *x = "Bar".into());
         assert_eq!(test.0, "Bar");
         Test::mut_complex
-            .with_args((Arg,))
-            .set_once(&mut test, |x| *x = "Bar".into());
+            .lazy(|| (Arg,))
+            .set(&mut test, |x| *x = "Bar".into());
         assert_eq!(test.0, "Bar");
     }
 }

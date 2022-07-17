@@ -25,9 +25,9 @@ where
         self.1.set(source, f)
     }
 }
-impl<'a, G, S, T, Src, TM> TraversalLike<'a, Src, (IsLens, TM)> for (G, S, T)
+impl<'a, G, S, T, Src, TM> AffineFold<'a, Src, (IsLens, TM)> for (G, S, T)
 where
-    T: TraversalLike<'a, Src, TM>,
+    T: AffineFold<'a, Src, TM>,
     Src: 'a,
 {
     type T = T::T;
