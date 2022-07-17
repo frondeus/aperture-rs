@@ -23,6 +23,15 @@ impl Person {
     pub fn mother_opt(&self) -> Option<&Person> {
         self.parents.get(0)
     }
+    pub fn parents(&self) -> &Vec<Person> {
+        &self.parents
+    }
+    pub fn parents_mut(&mut self) -> &mut Vec<Person> {
+        &mut self.parents
+    }
+    pub fn parents_opt(&self) -> Option<&Vec<Person>> {
+        Some(&self.parents)
+    }
 }
 
 pub struct Test(pub String);
