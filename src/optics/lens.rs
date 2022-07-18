@@ -1,18 +1,15 @@
-use super::{AffineFold, GetLike, SetLike};
+use super::{AffineFoldLike, GetLike, SetLike};
 
 mod ext;
 mod tuple;
 
 pub use ext::IntoLens;
 
-pub trait LensLike<'a, S, GM, SM, TM>:
-    GetLike<'a, S, GM> + SetLike<'a, S, SM> + AffineFold<'a, S, TM>
-{
-}
+pub trait LensLike<'a, S, GM, SM>: GetLike<'a, S, GM> + SetLike<'a, S, SM> {}
 
-impl<'a, Src, GM1, SM1, TM1, L1> LensLike<'a, Src, GM1, SM1, TM1> for L1
+impl<'a, Src, GM1, SM1, L1> LensLike<'a, Src, GM1, SM1> for L1
 where
-    L1: GetLike<'a, Src, GM1> + SetLike<'a, Src, SM1> + AffineFold<'a, Src, TM1>,
+    L1: GetLike<'a, Src, GM1> + SetLike<'a, Src, SM1>,
     Src: 'a,
 {
 }
@@ -28,7 +25,7 @@ mod tests {
 
     use super::*;
 
-    fn is_lens<'a, L: LensLike<'a, S, G, M, T>, S, G, M, T>(_l: L) {}
+    fn is_lens<'a, L: LensLike<'a, S, G, M>, S, G, M>(_l: L) {}
 
     #[test]
     fn lens() {
@@ -142,13 +139,13 @@ mod tests {
             f(&mut source.name)
         }
     }
-    impl<'a> AffineFold<'a, Person, IsLens> for PersonName {
-        type T = String;
+    // impl<'a> AffineFoldLike<'a, Person, IsLens> for PersonName {
+    //     type T = String;
 
-        fn preview(&self, source: &'a Person) -> Option<&'a Self::T> {
-            Some(&source.name)
-        }
-    }
+    //     fn preview(&self, source: &'a Person) -> Option<&'a Self::T> {
+    //         Some(&source.name)
+    //     }
+    // }
 
     struct PersonMother;
     impl<'a> GetLike<'a, Person, IsLens> for PersonMother {
@@ -168,11 +165,11 @@ mod tests {
             f(&mut source.parents[0])
         }
     }
-    impl<'a> AffineFold<'a, Person, IsLens> for PersonMother {
-        type T = Person;
+    // impl<'a> AffineFoldLike<'a, Person, IsLens> for PersonMother {
+    //     type T = Person;
 
-        fn preview(&self, source: &'a Person) -> Option<&'a Self::T> {
-            source.parents.get(0)
-        }
-    }
+    //     fn preview(&self, source: &'a Person) -> Option<&'a Self::T> {
+    //         source.parents.get(0)
+    //     }
+    // }
 }

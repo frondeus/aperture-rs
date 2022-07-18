@@ -1,8 +1,8 @@
-pub trait SetLike<'a, S, Marker> {
-    type T: 'a;
-    fn set<F>(&self, source: &'a mut S, f: F)
+pub trait SetLike<S, Marker> {
+    type T;
+    fn set<F>(&self, source: S, f: F) -> S
     where
-        F: FnOnce(&'a mut Self::T);
+        F: FnOnce(&mut Self::T);
 }
 
 #[cfg(test)]
@@ -16,17 +16,17 @@ mod tests {
 
     #[test]
     fn set() {
-        let mut test = Test("Foo".into());
+        let test = Test("Foo".into());
 
-        Test::mut_.set(&mut test, |x| *x = "Bar".into());
+        let test = Test::mut_.set(test, |x| *x = "Bar".into());
         assert_eq!(test.0, "Bar");
-        Test::mut_arg
+        let test = Test::mut_arg
             .with_args((1,))
-            .set(&mut test, |x| *x = "Bar".into());
+            .set(test, |x| *x = "Bar".into());
         assert_eq!(test.0, "Bar");
-        Test::mut_complex
+        let test = Test::mut_complex
             .lazy(|| (Arg,))
-            .set(&mut test, |x| *x = "Bar".into());
+            .set(test, |x| *x = "Bar".into());
         assert_eq!(test.0, "Bar");
     }
 }

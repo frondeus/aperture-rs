@@ -25,14 +25,14 @@ where
         self.1.set(source, f)
     }
 }
-impl<'a, G, S, T, Src, TM> AffineFold<'a, Src, (IsLens, TM)> for (G, S, T)
-where
-    T: AffineFold<'a, Src, TM>,
-    Src: 'a,
-{
-    type T = T::T;
+// impl<'a, G, S, T, Src, TM> AffineFoldLike<'a, Src, (IsLens, TM)> for (G, S, T)
+// where
+//     T: AffineFoldLike<'a, Src, TM>,
+//     Src: 'a,
+// {
+//     type T = T::T;
 
-    fn preview(&self, source: &'a Src) -> Option<&'a Self::T> {
-        self.2.preview(source)
-    }
-}
+//     fn preview(&self, source: &'a Src) -> Option<&'a Self::T> {
+//         self.2.preview(source)
+//     }
+// }

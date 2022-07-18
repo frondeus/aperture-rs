@@ -1,8 +1,8 @@
-use super::{AffineFold, ReviewLike, SetLike};
+use super::{AffineFoldLike, ReviewLike, SetLike};
 
-pub trait PrismLike<'a, S, TM>: ReviewLike<'a, S> + AffineFold<'a, S, TM> {}
+pub trait PrismLike<'a, S, TM>: ReviewLike<'a, S> + AffineFoldLike<'a, S, TM> {}
 
-impl<'a, S, TM, P> PrismLike<'a, S, TM> for P where P: ReviewLike<'a, S> + AffineFold<'a, S, TM> {}
+impl<'a, S, TM, P> PrismLike<'a, S, TM> for P where P: ReviewLike<'a, S> + AffineFoldLike<'a, S, TM> {}
 
 pub struct IsPrism;
 
@@ -19,16 +19,16 @@ where
     }
 }
 
-impl<'a, S> AffineFold<'a, Vec<S>, IsPrism> for At<usize>
-where
-    S: 'a,
-{
-    type T = S;
+// impl<'a, S> AffineFoldLike<'a, Vec<S>, IsPrism> for At<usize>
+// where
+//     S: 'a,
+// {
+//     type T = S;
 
-    fn preview(&self, source: &'a Vec<S>) -> Option<&'a Self::T> {
-        source.get(self.0)
-    }
-}
+//     fn preview(&self, source: &'a Vec<S>) -> Option<&'a Self::T> {
+//         source.get(self.0)
+//     }
+// }
 
 impl<'a, S, SM> SetLike<'a, Vec<S>, SM> for At<usize>
 where
@@ -65,7 +65,7 @@ mod tests {
 
     use super::*;
 
-    fn is_lens<'a, L: LensLike<'a, S, G, M, T>, S, G, M, T>(_l: L) {}
+    fn is_lens<'a, L: LensLike<'a, S, G, M>, S, G, M>(_l: L) {}
     fn is_person_prism<'a, P>(_p: P)
     where
         P: PrismLike<'a, Vec<Person>, IsPrism>,

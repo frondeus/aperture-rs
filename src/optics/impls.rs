@@ -1,9 +1,64 @@
-use crate::method::Method;
+use crate::method::{Method, MethodOnce};
 use crate::optics::*;
 
 use super::fold::FoldLike;
 
 pub struct IsMethod;
+
+impl<S, M, T> SetLike<S, (IsMethod, T)> for M
+where
+    M: for<'a> Method<&'a mut S, (), Output = &'a mut T>,
+{
+    type T = T;
+
+    fn set<F>(&self, mut source: S, f: F) -> S
+    where
+        F: FnOnce(&mut T),
+    {
+        let _mut = self.mcall(&mut source, ());
+        f(_mut);
+        source
+    }
+}
+
+// Fold is implemented automatically by Traversal
+// impl<T, M, I, S> FoldLike<S, IsMethod> for M
+// where
+//     M: Method<S, (), Output = I>,
+//     I: Iterator<Item = T>,
+// {
+//     type T = T;
+
+//     type Iter = I;
+
+//     fn fold(&self, source: S) -> Self::Iter {
+//         self.mcall(source, ())
+//     }
+// }
+
+impl<S, M, T> AffineFoldLike<S, IsMethod> for M
+where
+    M: Method<S, (), Output = Option<T>>,
+{
+    type T = T;
+    fn preview(&self, source: S) -> Option<Self::T> {
+        self.mcall(source, ())
+    }
+}
+
+impl<'a, S, M, T, O, F, SI> TraversalLike<S, T, O, F, IsMethod> for M
+where
+    M: Method<S, (), Output = SI>,
+    SI: Iterator<Item = T>,
+    F: FnMut(T) -> O,
+{
+    type Iter = std::iter::Map<SI, F>;
+
+    fn map(&self, source: S, f: F) -> Self::Iter {
+        let si = self.mcall(source, ()).into_iter();
+        si.map(f)
+    }
+}
 
 impl<'a, S, M, T> ReviewLike<'a, S> for M
 where
@@ -18,38 +73,6 @@ where
     }
 }
 
-impl<'a, S, M, T> SetLike<'a, S, IsMethod> for M
-where
-    M: Method<&'a mut S, (), Output = &'a mut T>,
-    T: 'a,
-    S: 'a,
-{
-    type T = T;
-
-    fn set<F>(&self, source: &'a mut S, f: F)
-    where
-        F: FnOnce(&'a mut Self::T),
-    {
-        let _mut = self.mcall(source, ());
-        f(_mut)
-    }
-}
-
-impl<'a, T, M, I> FoldLike<'a, [T], IsMethod> for M
-where
-    M: Method<&'a [T], (), Output = I>,
-    I: Iterator<Item = &'a T>,
-    T: 'a,
-{
-    type T = T;
-
-    type Iter = I;
-
-    fn fold(&self, source: &'a [T]) -> Self::Iter {
-        self.mcall(source, ())
-    }
-}
-
 impl<'a, S, M, T> GetLike<'a, S, IsMethod> for M
 where
     M: Method<&'a S, (), Output = &'a T>,
@@ -59,19 +82,6 @@ where
     type T = T;
 
     fn view(&self, source: &'a S) -> &'a Self::T {
-        self.mcall(source, ())
-    }
-}
-
-impl<'a, S, M, T> AffineFold<'a, S, IsMethod> for M
-where
-    M: Method<&'a S, (), Output = Option<&'a T>>,
-    T: 'a,
-    S: 'a,
-{
-    type T = T;
-
-    fn preview(&self, source: &'a S) -> Option<&'a Self::T> {
         self.mcall(source, ())
     }
 }
