@@ -1,7 +1,8 @@
-use crate::method::{Method, MethodOnce};
-use crate::optics::*;
-
 use super::fold::{AsFold, Fold};
+use crate::{
+    method::{Method, MethodOnce},
+    optics::*,
+};
 
 // pub struct IsMethod;
 

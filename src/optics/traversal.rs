@@ -1,6 +1,5 @@
-use crate::identity::Identity;
-
 use super::{fold::Fold, Setter};
+use crate::identity::Identity;
 
 // Set + Fold
 
@@ -54,9 +53,8 @@ where
 mod tests {
     use std::marker::PhantomData;
 
-    use crate::optics::assert_setter;
-
     use super::*;
+    use crate::optics::assert_setter;
 
     struct AsTraverse;
     struct Traverse<Mark>(PhantomData<Mark>);

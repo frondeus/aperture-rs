@@ -71,9 +71,8 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::data::{Arg, Test};
-
     use super::*;
+    use crate::data::{Arg, Test};
 
     #[test]
     fn test() {

@@ -31,9 +31,8 @@ mod tests {
 
     use std::collections::HashMap;
 
-    use crate::{data::Test, lazy::LazyExt, optics::fold::assert_fold};
-
     use super::*;
+    use crate::{data::Test, lazy::LazyExt, optics::fold::assert_fold};
 
     #[test]
     fn affine_fold() {

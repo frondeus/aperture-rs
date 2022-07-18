@@ -1,0 +1,5 @@
+format_macro_matchers=true
+format_macro_bodies=true
+imports_layout="HorizontalVertical"
+imports_granularity="Crate"
+group_imports="StdExternalCrate"

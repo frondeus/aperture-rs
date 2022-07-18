@@ -13,12 +13,11 @@ where
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use crate::{
         data::{Arg, Test},
         lazy::LazyExt,
     };
-
-    use super::*;
 
     #[test]
     fn review() {

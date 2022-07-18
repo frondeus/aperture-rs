@@ -28,13 +28,11 @@ mod impls;
 // mod then;
 // mod then_impl;
 
+pub use affine_fold::*;
+pub use affine_traversal::*;
 pub use review::*;
 pub use set::*;
-
-pub use affine_fold::*;
 pub use traversal::*;
-
-pub use affine_traversal::*;
 // pub use get::*;
 // pub use lens::*;
 // pub use optional::*;

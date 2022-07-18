@@ -1,6 +1,5 @@
-use crate::identity::Identity;
-
 use super::{AffineFold, Traversal};
+use crate::identity::Identity;
 
 pub struct AsAffineTraversal;
 pub trait AffineTraversal<As, S, T, O, F>
@@ -45,12 +44,11 @@ mod tests {
 
     use std::collections::HashMap;
 
+    use super::*;
     use crate::{
         lazy::LazyExt,
         optics::{assert_traversal, fold::Fold},
     };
-
-    use super::*;
 
     #[test]
     fn affine_traversal() {

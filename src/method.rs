@@ -45,9 +45,8 @@ impl_method! {A1, A2, A3, A4}
 
 #[cfg(test)]
 mod tests {
-    use crate::data::Test;
-
     use super::*;
+    use crate::data::Test;
 
     #[test]
     fn test() {
