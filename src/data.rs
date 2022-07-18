@@ -61,6 +61,10 @@ impl Test {
         self.0
     }
 
+    pub fn own_opt(self) -> Option<String> {
+        Some(self.0)
+    }
+
     pub fn ref_arg(&self, arg: i32) -> &String {
         &self.0
     }

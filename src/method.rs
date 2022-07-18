@@ -1,10 +1,12 @@
-pub trait MethodOnce<S, A> {
+use crate::sealed::Sealed;
+
+pub trait MethodOnce<S, A>: Sealed<S, A> {
     type Output;
 
     fn mcall_once(self, s: S, args: A) -> Self::Output;
 }
 
-pub trait Method<S, A>: MethodOnce<S, A> {
+pub trait Method<S, A>: MethodOnce<S, A> + Sealed<S, A> {
     fn mcall(&self, s: S, args: A) -> Self::Output;
 }
 
@@ -26,6 +28,7 @@ macro_rules! impl_method {
                 self(r, $($arg),*)
             }
         }
+        impl<F, S, V, $($arg),*> Sealed<S, ($($arg,)*)> for F where F: FnOnce(S, $($arg),*) -> V { }
         impl<F, S, V, $($arg),*> MethodOnce<S, ($($arg,)*)> for F
         where F: FnOnce(S, $($arg),*) -> V
         {

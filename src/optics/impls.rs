@@ -1,11 +1,11 @@
 use crate::method::{Method, MethodOnce};
 use crate::optics::*;
 
-use super::fold::FoldLike;
+use super::fold::{AsFold, Fold};
 
-pub struct IsMethod;
+// pub struct IsMethod;
 
-impl<S, M, T> SetLike<S, (IsMethod, T)> for M
+impl<S, M, T> Setter<AsSetter, S> for M
 where
     M: for<'a> Method<&'a mut S, (), Output = &'a mut T>,
 {
@@ -22,21 +22,21 @@ where
 }
 
 // Fold is implemented automatically by Traversal
-// impl<T, M, I, S> FoldLike<S, IsMethod> for M
-// where
-//     M: Method<S, (), Output = I>,
-//     I: Iterator<Item = T>,
-// {
-//     type T = T;
+impl<T, M, I, S> Fold<AsFold, S> for M
+where
+    M: Method<S, (), Output = I>,
+    I: Iterator<Item = T>,
+{
+    type T = T;
 
-//     type Iter = I;
+    type Iter = I;
 
-//     fn fold(&self, source: S) -> Self::Iter {
-//         self.mcall(source, ())
-//     }
-// }
+    fn fold(&self, source: S) -> Self::Iter {
+        self.mcall(source, ())
+    }
+}
 
-impl<S, M, T> AffineFoldLike<S, IsMethod> for M
+impl<S, M, T> AffineFold<AsAffineFold, S> for M
 where
     M: Method<S, (), Output = Option<T>>,
 {
@@ -46,25 +46,22 @@ where
     }
 }
 
-impl<'a, S, M, T, O, F, SI> TraversalLike<S, T, O, F, IsMethod> for M
+impl<S, M, SI, T> Traversal<AsTraversal, S> for M
 where
     M: Method<S, (), Output = SI>,
     SI: Iterator<Item = T>,
-    F: FnMut(T) -> O,
 {
-    type Iter = std::iter::Map<SI, F>;
+    type Iter = std::iter::Map<SI, Self::F>;
 
-    fn map(&self, source: S, f: F) -> Self::Iter {
+    fn map(&self, source: S, f: Self::F) -> Self::Iter {
         let si = self.mcall(source, ()).into_iter();
         si.map(f)
     }
 }
 
-impl<'a, S, M, T> ReviewLike<'a, S> for M
+impl<S, M, T> Review<AsReview, S> for M
 where
     M: Method<S, (), Output = T>,
-    T: 'a,
-    S: 'a,
 {
     type T = T;
 
@@ -73,15 +70,25 @@ where
     }
 }
 
-impl<'a, S, M, T> GetLike<'a, S, IsMethod> for M
+impl<S, M, T, O, F> AffineTraversal<AsAffineTraversal, S, T, O, F> for M
 where
-    M: Method<&'a S, (), Output = &'a T>,
-    T: 'a,
-    S: 'a,
+    M: Method<S, (), Output = Option<T>>,
+    F: FnMut(T) -> O,
 {
-    type T = T;
-
-    fn view(&self, source: &'a S) -> &'a Self::T {
-        self.mcall(source, ())
+    fn map_opt(&self, source: S, f: F) -> Option<O> {
+        self.mcall(source, ()).map(f)
     }
 }
+
+// impl<'a, S, M, T> GetLike<'a, S, IsMethod> for M
+// where
+//     M: Method<&'a S, (), Output = &'a T>,
+//     T: 'a,
+//     S: 'a,
+// {
+//     type T = T;
+
+//     fn view(&self, source: &'a S) -> &'a Self::T {
+//         self.mcall(source, ())
+//     }
+// }

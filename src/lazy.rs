@@ -1,4 +1,7 @@
-use crate::method::{Method, MethodOnce};
+use crate::{
+    method::{Method, MethodOnce},
+    sealed::Sealed,
+};
 
 pub trait LazyExt<S, A>: MethodOnce<S, A> + Sized {
     fn with_args(self, args: A) -> WithArgs<Self, A> {
@@ -20,6 +23,9 @@ pub struct WithLazyArgs<M, F> {
     method: M,
     func: F,
 }
+
+impl<S, F, M> Sealed<S, ()> for WithArgs<M, F> {}
+impl<S, F, M> Sealed<S, ()> for WithLazyArgs<M, F> {}
 
 impl<M, S, A, F> MethodOnce<S, ()> for WithLazyArgs<M, F>
 where

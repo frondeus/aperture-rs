@@ -1,34 +1,42 @@
-//- Basic blocks
-// Values
+// 0 degree - Basic blocks
+mod fold;
 mod review;
 mod set;
-// Collections
-mod fold;
 
+// 1st degree
 mod affine_fold;
-mod traverse;
+mod traversal;
 
-mod get;
+// 2nd degree
+mod affine_traversal; // known as optional type
 
-mod optional;
+// mod get;
 
-// Complex
-// mod lens;
+// 3rd degree - Complex
+// mod rev_lens;
 // mod prism;
+// mod lens;
+// mod rev_prism;
+
+// 4th degree
+// mod iso;
 
 // Impl
 mod impls;
 
 // Combinators
-mod then;
-mod then_impl;
+// mod then;
+// mod then_impl;
 
-pub use affine_fold::*;
-pub use get::*;
-// pub use lens::*;
-pub use optional::*;
-// pub use prism::*;
 pub use review::*;
 pub use set::*;
-pub use then::*;
-pub use traverse::*;
+
+pub use affine_fold::*;
+pub use traversal::*;
+
+pub use affine_traversal::*;
+// pub use get::*;
+// pub use lens::*;
+// pub use optional::*;
+// pub use prism::*;
+// pub use then::*;

@@ -1,4 +1,5 @@
-pub trait FoldLike<S, Marker>
+pub struct AsFold;
+pub trait Fold<As, S>
 where
     S: ?Sized,
 {
@@ -9,6 +10,13 @@ where
 }
 
 #[cfg(test)]
+pub fn assert_fold<As, Optic, S>(_o: Optic)
+where
+    Optic: Fold<As, S>,
+{
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
 
@@ -16,7 +24,9 @@ mod tests {
     fn fold() {
         let test: Vec<String> = vec!["Foo".into()];
 
-        let mut iter = Vec::<String>::into_iter.fold(test);
-        assert_eq!(iter.next().unwrap(), "Foo");
+        assert_fold::<AsFold, _, _, _>(Vec::<String>::into_iter);
+
+        let mut iter = IntoIterator::into_iter.fold(test);
+        assert!(iter.next().unwrap() == "Foo".to_string());
     }
 }

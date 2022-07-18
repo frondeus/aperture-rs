@@ -1,6 +1,14 @@
-pub trait ReviewLike<'a, S> {
-    type T: 'a;
+pub struct AsReview;
+pub trait Review<As, S> {
+    type T;
     fn review(&self, source: S) -> Self::T;
+}
+
+#[cfg(test)]
+pub fn assert_review<Optic, S, As>(_o: Optic)
+where
+    Optic: Review<As, S>,
+{
 }
 
 #[cfg(test)]

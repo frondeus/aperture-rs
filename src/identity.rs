@@ -1,4 +1,11 @@
 pub struct Identity;
+
+impl Identity {
+    pub fn option<T>(t: Option<T>) -> Option<T> {
+        t
+    }
+}
+
 impl<T> FnOnce<(T,)> for Identity {
     type Output = T;
     extern "rust-call" fn call_once(self, (t,): (T,)) -> Self::Output {

@@ -1,8 +1,16 @@
-pub trait SetLike<S, Marker> {
+pub struct AsSetter;
+pub trait Setter<As, S> {
     type T;
     fn set<F>(&self, source: S, f: F) -> S
     where
         F: FnOnce(&mut Self::T);
+}
+
+#[cfg(test)]
+pub fn assert_setter<Optic, S, As, M>(_o: Optic)
+where
+    Optic: Setter<As, S>,
+{
 }
 
 #[cfg(test)]
