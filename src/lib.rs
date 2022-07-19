@@ -1,4 +1,4 @@
-#![feature(unboxed_closures, fn_traits, type_alias_impl_trait)]
+// #![feature(unboxed_closures, fn_traits, type_alias_impl_trait)]
 
 mod sealed {
     pub trait Sealed<S, A> {}

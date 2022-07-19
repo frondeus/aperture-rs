@@ -1,7 +1,20 @@
-pub struct AsReview;
+use crate::method::Method;
+
+pub struct AsReviewMethod;
 pub trait Review<As, S> {
     type T;
     fn review(&self, source: S) -> Self::T;
+}
+
+impl<S, M, T> Review<AsReviewMethod, S> for M
+where
+    M: Method<S, (), Output = T>,
+{
+    type T = T;
+
+    fn review(&self, source: S) -> Self::T {
+        self.mcall(source, ())
+    }
 }
 
 #[cfg(test)]

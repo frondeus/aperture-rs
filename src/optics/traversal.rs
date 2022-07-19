@@ -1,91 +1,77 @@
-use super::{fold::Fold, Setter};
-use crate::identity::Identity;
-
-// Set + Fold
+use super::{Fold, Setter};
+use crate::method::Method;
 
 pub struct AsTraversal;
-pub trait Traversal<As, S> {
-    type T;
-    type O;
-    type F: FnMut(Self::T) -> Self::O;
-    type Iter: Iterator<Item = Self::O>;
+pub trait Traversal<As, S, Out, F>
+where
+    Self: Setter<As, S, In = <Self as Fold<As, S>>::T> + Fold<As, S>,
+    F: FnMut(<Self as Fold<As, S>>::T) -> Out,
+{
+    type TraversalIter: Iterator<Item = Out>;
 
-    fn map(&self, source: S, f: Self::F) -> Self::Iter;
+    fn map(&self, source: S, f: F) -> Self::TraversalIter;
 }
 
-impl<Optic, As, S> Setter<(AsTraversal, As), S> for Optic
+// #[cfg(test)]
+// pub fn assert_traversal<As, Optic, S, T>(_o: Optic)
+// where
+//     Optic: Traversal<As, S, T, T>,
+// {
+// }
+impl<S, M, SI, In, F, Out> Traversal<AsTraversal, S, Out, F> for M
 where
-    Optic: Traversal<As, S>,
+    M: Method<S, (), Output = SI> + Setter<AsTraversal, S, In = In> + Fold<AsTraversal, S, T = In>,
+    SI: Iterator<Item = In>,
+    F: FnMut(In) -> Out,
 {
-    type T = S;
+    type TraversalIter = std::iter::Map<SI, F>;
 
-    fn set<F2>(&self, mut source: S, f: F2) -> S
-    where
-        F2: FnOnce(&mut S),
-    {
-        f(&mut source);
-        source
+    fn map(&self, source: S, f: F) -> Self::TraversalIter
+where {
+        let si = self.mcall(source, ()).into_iter();
+        si.map(f)
     }
 }
 
-// impl<Optic, S, T, M> Fold<AsTraversal, S, (M, T)> for Optic
-// where
-//     Optic: Traversal<M, S, T, T, Identity, Optic>,
-// {
-//     type T = T;
-
-//     type Iter = Optic::Iter;
-
-//     fn fold(&self, source: S) -> Self::Iter {
-//         self.map(source, Identity)
-//     }
-// }
-
-#[cfg(test)]
-pub fn assert_traversal<As, Optic, S, M>(_o: Optic)
+impl<S, M, SI, In> Setter<AsTraversal, S> for M
 where
-    // Optic: Traversal<As, S, T, T, Identity, M>,
-    Optic: Traversal<As, S>,
+    M: Method<S, (), Output = SI>,
+    SI: Iterator<Item = In>,
 {
+    type In = In;
+
+    fn set<F>(&self, mut source: S, f: F) -> S
+    where
+        F: FnOnce(&mut Self::In),
+    {
+        // f(&mut source);
+        // source
+        todo!()
+    }
+}
+
+impl<S, M, SI, In> Fold<AsTraversal, S> for M
+where
+    M: Method<S, (), Output = SI>,
+    SI: Iterator<Item = In>,
+{
+    type T = In;
+
+    type FoldIter = SI;
+
+    fn fold(&self, source: S) -> Self::FoldIter {
+        self.mcall(source, ())
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use std::marker::PhantomData;
-
     use super::*;
-    use crate::optics::assert_setter;
-
-    struct AsTraverse;
-    struct Traverse<Mark>(PhantomData<Mark>);
-    impl<S, T, O, F> Traversal<AsTraverse, S> for Traverse<(O, F)>
-    where
-        S: Iterator<Item = T>,
-        F: FnMut(T) -> O,
-    {
-        type Iter = std::iter::Map<S, F>;
-        type T = T;
-
-        type O = O;
-
-        type F = F;
-
-        fn map(&self, source: S, f: F) -> Self::Iter {
-            source.map(f)
-        }
-    }
 
     #[test]
     fn traversal() {
         let test: Vec<String> = vec!["foo".into(), "bar".into()];
 
-        let mut iter = Traverse(PhantomData).map(test.into_iter(), |x: String| x.to_uppercase());
-
-        assert_eq!(iter.next().unwrap(), "FOO");
-        assert_eq!(iter.next().unwrap(), "BAR");
-        assert_eq!(iter.next(), None);
-
-        let test: Vec<String> = vec!["foo".into(), "bar".into()];
         let mut iter = Vec::<String>::into_iter.map(test, |x: String| x.to_uppercase());
         assert_eq!(iter.next().unwrap(), "FOO");
         assert_eq!(iter.next().unwrap(), "BAR");
@@ -96,8 +82,11 @@ mod tests {
     fn as_set() {
         let test: Vec<String> = vec!["foo".into(), "bar".into()];
 
-        assert_setter(Vec::<String>::into_iter);
+        // assert_setter(Vec::<String>::into_iter);
 
-        let test: Vec<String> = Vec::<String>::into_iter.set(test, |x| *x = vec!["ABC".into()]);
+        let test: Vec<String> = Vec::<String>::into_iter.set(test, |x| *x = "ABC".into());
+        // let mut iter = test.into_iter();
+        // assert_eq!(iter.next().unwrap(), "ABC");
+        // assert_eq!(iter.next(), None);
     }
 }

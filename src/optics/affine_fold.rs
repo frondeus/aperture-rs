@@ -1,29 +1,36 @@
-use super::fold::Fold;
+use super::Fold;
+use crate::method::Method;
 
-pub struct AsAffineFold;
-pub trait AffineFold<As, S> {
-    type T;
+pub struct AsAffineFoldMethod;
+pub trait AffineFold<As, S>: Fold<As, S> {
     fn preview(&self, source: S) -> Option<Self::T>;
 }
 
-#[cfg(test)]
-pub fn assert_affine_fold<As, Optic, S>(_o: Optic)
-where
-    Optic: AffineFold<As, S>,
-{
-}
-
-// impl<T, S, M, AF, Optics> Fold<AsAffineFold, S> for Optics
+// Since aff fold is basically aff traversal with identity function it is automatically implemented
+// impl<S, M, T> AffineFold<AsAffineFoldMethod, S> for M
 // where
-//     Optics: AffineFold<AF, S, T = T>,
+//     M: Method<S, (), Output = Option<T>> + Fold<AsAffineFoldMethod, S, T = T>,
+// {
+//     fn preview(&self, source: S) -> Option<Self::T> {
+//         self.mcall(source, ())
+//     }
+// }
+
+// impl<S, M, T> Fold<AsAffineFoldMethod, S> for M
+// where
+//     M: Method<S, (), Output = Option<T>>,
 // {
 //     type T = T;
-
-//     type Iter = std::option::IntoIter<T>;
-
-//     fn fold(&self, source: S) -> Self::Iter {
-//         self.preview(source).into_iter()
+//     type FoldIter = std::option::IntoIter<T>;
+//     fn fold(&self, source: S) -> Self::FoldIter {
+//         self.mcall(source, ()).into_iter()
 //     }
+// }
+// #[cfg(test)]
+// pub fn assert_affine_fold<As, Optic, S>(_o: Optic)
+// where
+//     Optic: AffineFold<As, S>,
+// {
 // }
 
 #[cfg(test)]
@@ -32,7 +39,7 @@ mod tests {
     use std::collections::HashMap;
 
     use super::*;
-    use crate::{data::Test, lazy::LazyExt, optics::fold::assert_fold};
+    use crate::{data::Test, lazy::LazyExt};
 
     #[test]
     fn affine_fold() {
@@ -57,8 +64,8 @@ mod tests {
     fn as_fold() {
         let test: Option<String> = Some("Foo".into());
 
-        assert_fold(Option::<String>::as_ref);
-        assert_affine_fold(Option::<String>::as_ref);
+        // assert_fold(Option::<String>::as_ref);
+        // assert_affine_fold(Option::<String>::as_ref);
 
         let mut iter = Option::as_ref.fold(&test);
         assert_eq!(iter.next().expect("some"), "Foo");
