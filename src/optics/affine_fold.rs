@@ -3,7 +3,8 @@ use crate::method::Method;
 
 pub struct AsAffineFoldMethod;
 pub trait AffineFold<As, S>: Fold<As, S> {
-    fn preview(&self, source: S) -> Option<Self::T>;
+    type T;
+    fn preview(&self, source: S) -> Option<<Self as AffineFold<As, S>>::T>;
 }
 
 // Since aff fold is basically aff traversal with identity function it is automatically implemented
@@ -33,41 +34,49 @@ pub trait AffineFold<As, S>: Fold<As, S> {
 // {
 // }
 
-#[cfg(test)]
-mod tests {
+// Affine traversal took it
+// #[cfg(test)]
+// mod tests {
 
-    use std::collections::HashMap;
+//     use std::collections::HashMap;
 
-    use super::*;
-    use crate::{data::Test, lazy::LazyExt};
+//     use super::*;
+//     use crate::{data::Test, lazy::LazyExt};
 
-    #[test]
-    fn affine_fold() {
-        let test = Test("Foo".into());
-        assert_eq!(Test::own_opt.preview(test).expect("some"), "Foo");
-        let test: Option<String> = Some("Foo".into());
-        assert_eq!(Option::as_ref.preview(&test).expect("some"), "Foo");
+//     #[test]
+//     fn affine_fold() {
+//         let vec = vec![1, 2, 3];
+//         assert_eq!(First.preview(vec), Some(1));
 
-        let mut map: HashMap<usize, String> = HashMap::new();
-        map.insert(1, "Foo".into());
+//         let vec = vec![1, 2, 3];
+//         let mut iter = First.fold(vec);
+//         assert_eq!(iter.next(), Some(1));
+//         assert_eq!(iter.next(), None);
+//         // let test = Test("Foo".into());
+//         // assert_eq!(Test::own_opt.preview(test).expect("some"), "Foo");
+//         // let test: Option<String> = Some("Foo".into());
+//         // assert_eq!(Option::as_ref.preview(&test).expect("some"), "Foo");
 
-        assert_eq!(
-            HashMap::get.with_args((&1,)).preview(&map).expect("some"),
-            "Foo"
-        );
-        assert_eq!(HashMap::get.with_args((&2,)).preview(&map), None);
+//         // let mut map: HashMap<usize, String> = HashMap::new();
+//         // map.insert(1, "Foo".into());
 
-        // assert_eq!(Option::or.fold(test).next().expect("some"), "Foo");
-    }
+//         // assert_eq!(
+//         //     HashMap::get.with_args((&1,)).preview(&map).expect("some"),
+//         //     "Foo"
+//         // );
+//         // assert_eq!(HashMap::get.with_args((&2,)).preview(&map), None);
 
-    #[test]
-    fn as_fold() {
-        let test: Option<String> = Some("Foo".into());
+//         // assert_eq!(Option::or.fold(test).next().expect("some"), "Foo");
+//     }
 
-        // assert_fold(Option::<String>::as_ref);
-        // assert_affine_fold(Option::<String>::as_ref);
+//     #[test]
+//     fn as_fold() {
+//         let test: Option<String> = Some("Foo".into());
 
-        let mut iter = Option::as_ref.fold(&test);
-        assert_eq!(iter.next().expect("some"), "Foo");
-    }
-}
+//         // assert_fold(Option::<String>::as_ref);
+//         // assert_affine_fold(Option::<String>::as_ref);
+
+//         // let mut iter = Option::as_ref.fold(&test);
+//         // assert_eq!(iter.next().expect("some"), "Foo");
+//     }
+// }

@@ -1,3 +1,4 @@
+#[derive(Clone, Debug)]
 pub struct Person {
     pub age: u32,
     pub name: String,
@@ -10,6 +11,10 @@ impl Person {
     }
     pub fn name_mut(&mut self) -> &mut String {
         &mut self.name
+    }
+    pub fn set_name(mut self, name: String) -> Self {
+        self.name = name;
+        self
     }
     pub fn name_opt(&self) -> Option<&String> {
         Some(&self.name)

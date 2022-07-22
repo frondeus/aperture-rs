@@ -46,7 +46,7 @@ impl_method! {A1, A2, A3, A4}
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::data::Test;
+    use crate::data::{Person, Test};
 
     #[test]
     fn test() {
@@ -62,5 +62,13 @@ mod tests {
         assert_eq!(Test::mut_arg.mcall(&mut test, (1,)), "Foo");
         assert_eq!(Test::prop_arg.mcall(&test, (1,)), "Foo");
         assert_eq!(Test::own_arg.mcall(test, (1,)), "Foo");
+
+        let olivier = Person {
+            age: 24,
+            name: "Olivier".into(),
+            parents: vec![],
+        };
+        // Person::name_mut.set(&mut olivier, |name| *name = "New Olivier".to_string());
+        let olivier = Person::set_name.mcall(olivier, ("New Olivier".to_string(),));
     }
 }

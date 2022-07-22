@@ -1,66 +1,124 @@
 use super::{Fold, Setter};
 use crate::method::Method;
 
+pub mod nested;
+
 pub struct AsTraversal;
-pub trait Traversal<As, S, Out, F>
+pub trait Traversal<As, S, T, F>
 where
-    Self: Setter<As, S, In = <Self as Fold<As, S>>::T> + Fold<As, S>,
-    F: FnMut(<Self as Fold<As, S>>::T) -> Out,
+    Self: Fold<As, S> + Setter<As, S, <Self as Traversal<As, S, T, F>>::O, D = S>,
+    F: FnMut(<Self as Traversal<As, S, T, F>>::O) -> T,
 {
-    type TraversalIter: Iterator<Item = Out>;
+    type O;
+    type D: Iterator<Item = T>;
 
-    fn map(&self, source: S, f: F) -> Self::TraversalIter;
+    fn traverse(&self, source: S, f: F) -> <Self as Traversal<As, S, T, F>>::D;
 }
 
-// #[cfg(test)]
-// pub fn assert_traversal<As, Optic, S, T>(_o: Optic)
-// where
-//     Optic: Traversal<As, S, T, T>,
-// {
-// }
-impl<S, M, SI, In, F, Out> Traversal<AsTraversal, S, Out, F> for M
-where
-    M: Method<S, (), Output = SI> + Setter<AsTraversal, S, In = In> + Fold<AsTraversal, S, T = In>,
-    SI: Iterator<Item = In>,
-    F: FnMut(In) -> Out,
-{
-    type TraversalIter = std::iter::Map<SI, F>;
+struct Filtered<Filter>(Filter);
 
-    fn map(&self, source: S, f: F) -> Self::TraversalIter
-where {
-        let si = self.mcall(source, ()).into_iter();
-        si.map(f)
+impl<S, Filter> Fold<AsTraversal, S> for Filtered<Filter>
+where
+    Filter: for<'a> FnMut(&'a S::Item) -> bool + Clone,
+    S: IntoIterator,
+{
+    type D = std::iter::Filter<S::IntoIter, Filter>;
+
+    fn fold(&self, source: S) -> Self::D {
+        source.into_iter().filter(self.0.clone())
     }
 }
 
-impl<S, M, SI, In> Setter<AsTraversal, S> for M
+impl<S, Filter> Setter<AsTraversal, S, S::Item> for Filtered<Filter>
 where
-    M: Method<S, (), Output = SI>,
-    SI: Iterator<Item = In>,
+    Filter: for<'a> FnMut(&'a S::Item) -> bool + Clone,
+    S: IntoIterator + FromIterator<S::Item>,
 {
-    type In = In;
+    type O = S::Item;
 
-    fn set<F>(&self, mut source: S, f: F) -> S
+    type D = S;
+
+    fn set<F>(&self, source: S, mut f: F) -> Self::D
     where
-        F: FnOnce(&mut Self::In),
+        F: FnMut(Self::O) -> S::Item,
     {
-        // f(&mut source);
-        // source
-        todo!()
+        source
+            .into_iter()
+            .map(move |x| match (self.0.clone())(&x) {
+                true => f(x),
+                false => x,
+            })
+            .collect()
     }
 }
 
-impl<S, M, SI, In> Fold<AsTraversal, S> for M
+impl<S, F, T, Filter> Traversal<AsTraversal, S, T, F> for Filtered<Filter>
 where
-    M: Method<S, (), Output = SI>,
-    SI: Iterator<Item = In>,
+    Filter: for<'a> FnMut(&'a S::Item) -> bool + Clone,
+    S: IntoIterator + FromIterator<S::Item>,
+    F: FnMut(S::Item) -> T,
 {
-    type T = In;
+    type O = S::Item;
 
-    type FoldIter = SI;
+    type D = std::iter::Map<std::iter::Filter<S::IntoIter, Filter>, F>;
 
-    fn fold(&self, source: S) -> Self::FoldIter {
-        self.mcall(source, ())
+    fn traverse(&self, source: S, f: F) -> <Self as Traversal<AsTraversal, S, T, F>>::D {
+        source.into_iter().filter(self.0.clone()).map(f)
+    }
+}
+
+struct Every;
+
+impl<S> Fold<AsTraversal, S> for Every
+where
+    S: IntoIterator,
+{
+    type D = S::IntoIter;
+
+    fn fold(&self, source: S) -> Self::D {
+        source.into_iter()
+    }
+}
+
+impl<S, T> Setter<AsTraversal, S, T> for Every
+where
+    S: IntoIterator<Item = T> + FromIterator<T>,
+    // for<'a> &'a mut S: IntoIterator<Item = &'a mut T>,
+{
+    type O = T;
+
+    type D = S;
+
+    fn set<F>(&self, source: S, f: F) -> Self::D
+    where
+        F: FnMut(T) -> T,
+    {
+        // let _mut: &mut S = &mut source;
+        // _mut.into_iter().for_each(|x| {
+        //     *x = f(*x);
+        // });
+        // .map(|x| {
+        //     *x = f;
+        //     x
+        // });
+        // source
+        source.into_iter().map(f).collect()
+        // todo!()
+    }
+}
+
+impl<S, F, T> Traversal<AsTraversal, S, T, F> for Every
+where
+    S: IntoIterator + FromIterator<S::Item>,
+    // for<'a> &'a mut S: IntoIterator<Item = S::Item>,
+    F: FnMut(S::Item) -> T,
+{
+    type O = S::Item;
+
+    type D = std::iter::Map<S::IntoIter, F>;
+
+    fn traverse(&self, source: S, f: F) -> <Self as Traversal<AsTraversal, S, T, F>>::D {
+        source.into_iter().map(f)
     }
 }
 
@@ -72,21 +130,47 @@ mod tests {
     fn traversal() {
         let test: Vec<String> = vec!["foo".into(), "bar".into()];
 
-        let mut iter = Vec::<String>::into_iter.map(test, |x: String| x.to_uppercase());
+        let mut iter = Every.traverse(test, |x: String| x.to_uppercase());
         assert_eq!(iter.next().unwrap(), "FOO");
         assert_eq!(iter.next().unwrap(), "BAR");
+        assert_eq!(iter.next(), None);
+
+        let test: Vec<u32> = vec![1, 2, 3];
+
+        let mut iter = Filtered(|x: &u32| x % 2 == 0).traverse(test, |x| x + 1);
+        assert_eq!(iter.next().unwrap(), 3);
         assert_eq!(iter.next(), None);
     }
 
     #[test]
-    fn as_set() {
+    fn as_fold() {
         let test: Vec<String> = vec!["foo".into(), "bar".into()];
 
-        // assert_setter(Vec::<String>::into_iter);
+        let mut iter = Every.fold(test);
+        assert_eq!(iter.next().unwrap(), "foo");
+        assert_eq!(iter.next().unwrap(), "bar");
+        assert_eq!(iter.next(), None);
 
-        let test: Vec<String> = Vec::<String>::into_iter.set(test, |x| *x = "ABC".into());
-        // let mut iter = test.into_iter();
-        // assert_eq!(iter.next().unwrap(), "ABC");
-        // assert_eq!(iter.next(), None);
+        let test: Vec<u32> = vec![1, 2, 3];
+
+        let mut iter = Filtered(|x: &u32| x % 2 == 0).fold(test);
+        assert_eq!(iter.next().unwrap(), 2);
+        assert_eq!(iter.next(), None);
+    }
+
+    #[test]
+    fn as_setter() {
+        let test: Vec<String> = vec!["foo".into(), "bar".into()];
+
+        let new: Vec<String> = Every.set(test, |x: String| x.to_uppercase());
+        let mut iter = new.into_iter();
+        assert_eq!(iter.next().unwrap(), "FOO");
+        assert_eq!(iter.next().unwrap(), "BAR");
+        assert_eq!(iter.next(), None);
+
+        let test: Vec<u32> = vec![1, 2, 3];
+
+        let new = Filtered(|x: &u32| x % 2 == 0).set(test, |x| x + 1);
+        assert_eq!(new, vec![1, 3, 3]);
     }
 }

@@ -3,115 +3,147 @@
 use super::{AffineFold, AffineTraversal, Fold, Getter, Setter, Traversal};
 
 pub struct AsLens;
-pub struct Lens<G, AT> {
-    getter: G,
-    aff_traversal: AT,
-}
-
-impl<G, AT> Lens<G, AT> {
-    pub fn create<GA, ATA, S, Out, F, In>(getter: G, aff_traversal: AT) -> Self
-    where
-        G: Getter<GA, S>,
-        AT: AffineTraversal<ATA, S, Out, F> + Fold<ATA, S, T = In>,
-        F: FnMut(In) -> Out,
-    {
-        Self {
-            getter,
-            aff_traversal,
-        }
-    }
-}
-
-impl<A, S, G, AT> Getter<(AsLens, A), S> for Lens<G, AT>
+pub trait Lens<As, S, T, F>
 where
-    G: Getter<A, S>,
+    Self: Getter<As, S> + AffineTraversal<As, S, T, F>,
+    F: FnMut(<Self as Traversal<As, S, T, F>>::O) -> T,
 {
-    type T = G::T;
-
-    fn view(&self, source: S) -> <Self as Getter<(AsLens, A), S>>::T {
-        self.getter.view(source)
-    }
 }
 
-impl<A, S, G, AT, Out, F> AffineTraversal<(AsLens, A), S, Out, F> for Lens<G, AT>
+impl<As, L, S, T, F> Lens<As, S, T, F> for L
 where
-    AT: AffineTraversal<A, S, Out, F>,
-    F: FnMut(<AT as Fold<A, S>>::T) -> Out,
+    L: Getter<As, S> + AffineTraversal<As, S, T, F>,
+
+    F: FnMut(<Self as Traversal<As, S, T, F>>::O) -> T,
 {
-    fn map_opt(&self, source: S, f: F) -> Option<Out> {
-        self.aff_traversal.map_opt(source, f)
-    }
 }
 
-impl<A, S, G, AT, Out, F> Traversal<(AsLens, A), S, Out, F> for Lens<G, AT>
-where
-    AT: Traversal<A, S, Out, F>,
-    F: FnMut(<AT as Fold<A, S>>::T) -> Out,
-{
-    type TraversalIter = AT::TraversalIter;
-
-    fn map(&self, source: S, f: F) -> Self::TraversalIter {
-        self.aff_traversal.map(source, f)
-    }
-}
-
-impl<A, S, G, AT> AffineFold<(AsLens, A), S> for Lens<G, AT>
-where
-    AT: AffineFold<A, S>,
-{
-    fn preview(&self, source: S) -> Option<Self::T> {
-        self.aff_traversal.preview(source)
-    }
-}
-
-impl<A, S, G, AT> Setter<(AsLens, A), S> for Lens<G, AT>
-where
-    AT: Setter<A, S>,
-{
-    type In = AT::In;
-
-    fn set<F>(&self, source: S, f: F) -> S
-    where
-        F: FnOnce(&mut Self::In),
-    {
-        self.aff_traversal.set(source, f)
-    }
-}
-
-impl<A, S, G, AT> Fold<(AsLens, A), S> for Lens<G, AT>
-where
-    AT: Fold<A, S>,
-{
-    type T = AT::T;
-
-    type FoldIter = AT::FoldIter;
-
-    fn fold(&self, source: S) -> Self::FoldIter {
-        self.aff_traversal.fold(source)
-    }
-}
 #[cfg(test)]
 mod tests {
     //     use crate::{
     //         data::{Person, Test},
     //         optics::Then,
     //     };
+    struct PersonParents;
+    impl Getter<AsLens, Person> for PersonParents {
+        type T = Vec<Person>;
+
+        fn view(&self, source: Person) -> <Self as Getter<AsLens, Person>>::T {
+            source.parents
+        }
+    }
+    impl AffineFold<AsLens, Person> for PersonParents {
+        type T = Vec<Person>;
+
+        fn preview(&self, source: Person) -> Option<<Self as AffineFold<AsLens, Person>>::T> {
+            Some(source.parents)
+        }
+    }
+    impl Fold<AsLens, Person> for PersonParents {
+        type D = std::option::IntoIter<Vec<Person>>;
+
+        fn fold(&self, source: Person) -> Self::D {
+            Some(source.parents).into_iter()
+        }
+    }
+    impl<T, F> AffineTraversal<AsLens, Person, T, F> for PersonParents
+    where
+        F: FnMut(Vec<Person>) -> T,
+    {
+        fn map_opt(&self, source: Person, f: F) -> Option<T> {
+            Some(source.parents).map(f)
+        }
+    }
+    impl<T, F> Traversal<AsLens, Person, T, F> for PersonParents
+    where
+        F: FnMut(Vec<Person>) -> T,
+    {
+        type O = Vec<Person>;
+
+        type D = std::option::IntoIter<T>;
+
+        fn traverse(&self, source: Person, f: F) -> <Self as Traversal<AsLens, Person, T, F>>::D {
+            Some(source.parents).map(f).into_iter()
+        }
+    }
+    impl Setter<AsLens, Person, Vec<Person>> for PersonParents {
+        type O = Vec<Person>;
+
+        type D = Person;
+
+        fn set<F>(&self, mut source: Person, mut f: F) -> Self::D
+        where
+            F: FnMut(Self::O) -> Vec<Person>,
+        {
+            source.parents = f(source.parents);
+            source
+        }
+    }
+
+    struct PersonMother;
+
+    impl Getter<AsLens, Person> for PersonMother {
+        type T = Person;
+
+        fn view(&self, source: Person) -> <Self as Getter<AsLens, Person>>::T {
+            source.parents.into_iter().next().unwrap()
+        }
+    }
+    impl AffineFold<AsLens, Person> for PersonMother {
+        type T = Person;
+
+        fn preview(&self, source: Person) -> Option<<Self as AffineFold<AsLens, Person>>::T> {
+            source.parents.into_iter().next()
+        }
+    }
+    impl Fold<AsLens, Person> for PersonMother {
+        type D = std::iter::Take<std::vec::IntoIter<Person>>;
+
+        fn fold(&self, source: Person) -> Self::D {
+            source.parents.into_iter().take(1)
+        }
+    }
+    impl<T, F> AffineTraversal<AsLens, Person, T, F> for PersonMother
+    where
+        F: FnMut(Person) -> T,
+    {
+        fn map_opt(&self, source: Person, f: F) -> Option<T> {
+            source.parents.into_iter().take(1).map(f).next()
+        }
+    }
+    impl<T, F> Traversal<AsLens, Person, T, F> for PersonMother
+    where
+        F: FnMut(Person) -> T,
+    {
+        type O = Person;
+
+        type D = std::iter::Map<std::iter::Take<std::vec::IntoIter<Person>>, F>;
+
+        fn traverse(&self, source: Person, f: F) -> <Self as Traversal<AsLens, Person, T, F>>::D {
+            source.parents.into_iter().take(1).map(f)
+        }
+    }
+    impl Setter<AsLens, Person, Person> for PersonMother {
+        type O = Person;
+
+        type D = Person;
+
+        fn set<F>(&self, mut source: Person, f: F) -> Self::D
+        where
+            F: FnMut(Self::O) -> Person,
+        {
+            let mut iter = source.parents.into_iter();
+            let new_mom = iter.next().map(f);
+            source.parents = new_mom.into_iter().chain(iter).collect();
+            source
+        }
+    }
 
     use super::*;
     use crate::data::{Person, Test};
 
-    //     fn is_lens<'a, L: LensLike<'a, S, G, M>, S, G, M>(_l: L) {}
-
-    #[test]
-    fn lens() {
-        let mut test = Test("Foo".into());
-
-        // let lens = Lens::create(Test::own_, Test::mut_);
-
-        // assert_eq!(lens.view(test), "Foo");
-        // lens.set(test, |f| *f = "Bar".into());
-
-        let mut olivier = Person {
+    fn olivier() -> Person {
+        Person {
             age: 24,
             name: "Olivier".into(),
             parents: vec![
@@ -126,7 +158,26 @@ mod tests {
                     parents: vec![],
                 },
             ],
-        };
+        }
+    }
+    //     fn is_lens<'a, L: LensLike<'a, S, G, M>, S, G, M>(_l: L) {}
+    #[test]
+    fn as_view() {
+        let mom = PersonMother.view(olivier());
+        assert_eq!(&mom.name, "Anne");
+
+        let parents = PersonParents.view(olivier());
+        assert_eq!(&parents[1].name, "Thierry");
+    }
+
+    #[test]
+    fn as_setter() {
+        let new_olivier = PersonMother.set(olivier(), |mut mom| {
+            mom.name = "Jocelyn".into();
+            mom
+        });
+        let mom = PersonMother.view(new_olivier);
+        assert_eq!(&mom.name, "Jocelyn");
 
         // let lens = Lens::create(Person::name, Person::name_mut);
         // let test = lens.set(olivier, |f| f);

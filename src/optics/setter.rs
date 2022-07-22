@@ -1,35 +1,29 @@
 use crate::method::Method;
 
 pub struct AsSetterMethod;
-pub trait Setter<As, S> {
-    type In;
-    fn set<F>(&self, source: S, f: F) -> S
+pub trait Setter<As, S, T> {
+    type O;
+    type D;
+    fn set<F>(&self, source: S, f: F) -> Self::D
     where
-        F: FnOnce(&mut Self::In);
+        F: FnMut(Self::O) -> T + Clone;
 }
 
-impl<S, M, T> Setter<AsSetterMethod, S> for M
+impl<S, D, M, T> Setter<AsSetterMethod, S, T> for M
 where
-    M: for<'a> Method<&'a mut S, (), Output = &'a mut T>,
+    M: Method<S, (T,), Output = D>,
 {
-    type In = T;
+    type D = D;
+    type O = ();
 
-    fn set<F>(&self, mut source: S, f: F) -> S
+    fn set<F>(&self, source: S, mut f: F) -> Self::D
     where
-        F: FnOnce(&mut Self::In),
+        F: FnMut(Self::O) -> T + Clone,
     {
-        let mut _mut = self.mcall(&mut source, ());
-        f(_mut);
-        source
+        let new = f(());
+        self.mcall(source, (new,))
     }
 }
-
-// #[cfg(test)]
-// pub fn assert_setter<Optic, S, As, M>(_o: Optic)
-// where
-//     Optic: Setter<As, S>,
-// {
-// }
 
 #[cfg(test)]
 mod tests {
@@ -39,22 +33,25 @@ mod tests {
         lazy::LazyExt,
     };
 
+    fn is_setter_a_method<M, In, S>(m: M)
+    where
+        M: Method<S, (In,), Output = S>,
+    {
+    }
+
     #[test]
     fn set() {
-        let test = Test("Foo".into());
-
-        let test = Test::mut_.set(test, |x| {
-            *x = "Bar".into();
-        });
-        assert_eq!(test.0, "Bar");
-
         let olivier = Person {
             age: 24,
             name: "Olivier".into(),
             parents: vec![],
         };
-        let olivier2 = Person::name_mut.set(olivier, |name| *name = "New Olivier".into());
-        assert_eq!(olivier2.name, "New Olivier");
+
+        is_setter_a_method(Person::set_name);
+        let new = Person::set_name.set(olivier, |()| "new".to_string());
+        assert_eq!(new.name, "new");
+        assert_eq!(new.age, 24);
+
         // let test = Test::mut_arg
         //     .with_args((1,))
         //     .set(test, |x| *x = "Bar".into());
