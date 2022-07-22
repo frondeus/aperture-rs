@@ -15,58 +15,60 @@ use crate::optics::{
     Traversal,
 };
 
-pub struct LensAndLens<L1, L2, Mark>(pub L1, pub L2, PhantomData<Mark>);
+pub struct LensAndLens<L1, L2>(pub L1, pub L2);
 
-impl<S, L1, L2, T1> Then<T1, S, L2> for L1
+impl<S, L1, L2> Then<AsLens, S, L2> for L1
 where
-    L1: Setter<AsLens, S, T1> + Fold<AsLens, S>,
+    L1: Setter<AsLens, S> + Fold<AsLens, S>,
 {
-    type Output = LensAndLens<L1, L2, T1>;
+    type Output = LensAndLens<L1, L2>;
 
     fn then(self, l2: L2) -> Self::Output {
-        LensAndLens(self, l2, PhantomData)
+        LensAndLens(self, l2)
     }
 }
 
-impl<L1, L2, S, T1, T2> Setter<AsLens, S, T2> for LensAndLens<L1, L2, T1>
+impl<L1, L2, S, T> Setter<AsLens, S> for LensAndLens<L1, L2>
 where
-    L1: Setter<AsLens, S, T1, O = T1, D = S>,
-    L2: Setter<AsLens, T1, T2, O = T2, D = T1>,
+    L1: Setter<AsLens, S, T = T, O = T, D = S>,
+    L2: Setter<AsLens, T, D = T>,
 {
-    type O = T2;
+    type O = L2::O;
+    type T = L2::T;
 
     type D = S;
 
     fn set<F>(&self, source: S, f: F) -> Self::D
     where
-        F: FnMut(Self::O) -> T2 + Clone,
+        F: FnMut(Self::O) -> Self::T + Clone,
     {
         self.0.set(source, |o| self.1.set(o, f.clone()))
     }
 }
 
-impl<L1, L2, S, D1, D2, T1, T2, M> Fold<AsLens, S> for LensAndLens<L1, L2, M>
+impl<L1, L2, S> Fold<AsLens, S> for LensAndLens<L1, L2>
 where
-    L1: Fold<AsLens, S, D = D1>,
-    L2: Fold<AsLens, T1, D = D2> + Clone,
-    D1: Iterator<Item = T1>,
-    D2: Iterator<Item = T2>,
+    L1: Fold<AsLens, S>,
+    L1::D: Iterator,
+    L2: Fold<AsLens, <<L1 as Fold<AsLens, S>>::D as Iterator>::Item> + Clone,
+    L2::D: Iterator,
 {
-    type D = NestedFold<AsLens, D1, L2>;
+    type D = NestedFold<AsLens, L1::D, L2>;
 
     fn fold(&self, source: S) -> Self::D {
         NestedFold::new(self.0.fold(source), self.1.clone())
     }
 }
 
-impl<L1, L2, S, D1, D2, T1, T2, M> AffineFold<AsLens, S> for LensAndLens<L1, L2, M>
+impl<L1, L2, S> AffineFold<AsLens, S> for LensAndLens<L1, L2>
 where
+    L1: Fold<AsLens, S>,
+    L1::D: Iterator,
+    L2: Fold<AsLens, <<L1 as Fold<AsLens, S>>::D as Iterator>::Item> + Clone,
+    <L2 as Fold<AsLens, <<L1 as Fold<AsLens, S>>::D as Iterator>::Item>>::D: Iterator,
+
     L1: AffineFold<AsLens, S>,
     L2: AffineFold<AsLens, L1::T> + Clone,
-    L1: Fold<AsLens, S, D = D1>,
-    L2: Fold<AsLens, T1, D = D2> + Clone,
-    D1: Iterator<Item = T1>,
-    D2: Iterator<Item = T2>,
 {
     type T = L2::T;
 
@@ -210,7 +212,8 @@ mod tests {
             Some(source.name).map(f).into_iter()
         }
     }
-    impl Setter<AsLens, Person, String> for PersonName {
+    impl Setter<AsLens, Person> for PersonName {
+        type T = String;
         type O = String;
 
         type D = Person;
@@ -266,7 +269,8 @@ mod tests {
             source.parents.into_iter().take(1).map(f)
         }
     }
-    impl Setter<AsLens, Person, Person> for PersonMother {
+    impl Setter<AsLens, Person> for PersonMother {
+        type T = Person;
         type O = Person;
 
         type D = Person;
@@ -323,7 +327,8 @@ mod tests {
             Some(source.parents).map(f).into_iter()
         }
     }
-    impl Setter<AsLens, Person, Vec<Person>> for PersonParents {
+    impl Setter<AsLens, Person> for PersonParents {
+        type T = Vec<Person>;
         type O = Vec<Person>;
 
         type D = Person;

@@ -66,7 +66,8 @@ mod tests {
             Some(source.parents).map(f).into_iter()
         }
     }
-    impl Setter<AsLens, Person, Vec<Person>> for PersonParents {
+    impl Setter<AsLens, Person> for PersonParents {
+        type T = Vec<Person>;
         type O = Vec<Person>;
 
         type D = Person;
@@ -123,7 +124,8 @@ mod tests {
             source.parents.into_iter().take(1).map(f)
         }
     }
-    impl Setter<AsLens, Person, Person> for PersonMother {
+    impl Setter<AsLens, Person> for PersonMother {
+        type T = Person;
         type O = Person;
 
         type D = Person;

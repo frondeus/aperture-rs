@@ -1,29 +1,31 @@
 use crate::method::Method;
 
 pub struct AsSetterMethod;
-pub trait Setter<As, S, T> {
+pub trait Setter<As, S> {
     type O;
     type D;
+    type T;
     fn set<F>(&self, source: S, f: F) -> Self::D
     where
-        F: FnMut(Self::O) -> T + Clone;
+        F: FnMut(Self::O) -> Self::T + Clone;
 }
 
-impl<S, D, M, T> Setter<AsSetterMethod, S, T> for M
-where
-    M: Method<S, (T,), Output = D>,
-{
-    type D = D;
-    type O = ();
+// impl<S, D, M, T> Setter<AsSetterMethod, S> for M
+// where
+//     M: Method<S, (T,), Output = D>,
+// {
+//     type D = D;
+//     type O = ();
+//     type T = T;
 
-    fn set<F>(&self, source: S, mut f: F) -> Self::D
-    where
-        F: FnMut(Self::O) -> T + Clone,
-    {
-        let new = f(());
-        self.mcall(source, (new,))
-    }
-}
+//     fn set<F>(&self, source: S, mut f: F) -> Self::D
+//     where
+//         F: FnMut(Self::O) -> Self::T + Clone,
+//     {
+//         let new = f(());
+//         self.mcall(source, (new,))
+//     }
+// }
 
 #[cfg(test)]
 mod tests {
@@ -47,10 +49,10 @@ mod tests {
             parents: vec![],
         };
 
-        is_setter_a_method(Person::set_name);
-        let new = Person::set_name.set(olivier, |()| "new".to_string());
-        assert_eq!(new.name, "new");
-        assert_eq!(new.age, 24);
+        // is_setter_a_method(Person::set_name);
+        // let new = Person::set_name.set(olivier, |()| "new".to_string());
+        // assert_eq!(new.name, "new");
+        // assert_eq!(new.age, 24);
 
         // let test = Test::mut_arg
         //     .with_args((1,))

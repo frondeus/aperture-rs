@@ -38,10 +38,11 @@ where
     }
 }
 
-impl<S> Setter<AsAffineTraversal, S, S::Item> for First
+impl<S> Setter<AsAffineTraversal, S> for First
 where
     S: IntoIterator + FromIterator<S::Item>,
 {
+    type T = S::Item;
     type O = S::Item;
 
     type D = S;
@@ -101,7 +102,8 @@ pub struct At<Key>(Key);
 //         todo!()
 //     }
 // }
-impl<O> Setter<AsAffineTraversal, Vec<O>, O> for At<usize> {
+impl<O> Setter<AsAffineTraversal, Vec<O>> for At<usize> {
+    type T = O;
     type O = O;
 
     type D = Vec<O>;

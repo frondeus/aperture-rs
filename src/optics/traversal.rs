@@ -6,7 +6,7 @@ pub mod nested;
 pub struct AsTraversal;
 pub trait Traversal<As, S, T, F>
 where
-    Self: Fold<As, S> + Setter<As, S, <Self as Traversal<As, S, T, F>>::O, D = S>,
+    Self: Fold<As, S> + Setter<As, S, T = <Self as Traversal<As, S, T, F>>::O, D = S>,
     F: FnMut(<Self as Traversal<As, S, T, F>>::O) -> T,
 {
     type O;
@@ -29,11 +29,12 @@ where
     }
 }
 
-impl<S, Filter> Setter<AsTraversal, S, S::Item> for Filtered<Filter>
+impl<S, Filter> Setter<AsTraversal, S> for Filtered<Filter>
 where
     Filter: for<'a> FnMut(&'a S::Item) -> bool + Clone,
     S: IntoIterator + FromIterator<S::Item>,
 {
+    type T = S::Item;
     type O = S::Item;
 
     type D = S;
@@ -80,11 +81,12 @@ where
     }
 }
 
-impl<S, T> Setter<AsTraversal, S, T> for Every
+impl<S, T> Setter<AsTraversal, S> for Every
 where
     S: IntoIterator<Item = T> + FromIterator<T>,
     // for<'a> &'a mut S: IntoIterator<Item = &'a mut T>,
 {
+    type T = T;
     type O = T;
 
     type D = S;
