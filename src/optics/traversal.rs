@@ -14,7 +14,8 @@ where
         F: FnMut(<Self::D as Iterator>::Item) -> T;
 }
 
-struct Filtered<Filter>(Filter);
+#[derive(Clone)]
+pub struct Filtered<Filter>(pub Filter);
 
 impl<S, Filter> Fold<AsTraversal, S> for Filtered<Filter>
 where
@@ -65,7 +66,8 @@ where
     }
 }
 
-struct Every;
+#[derive(Clone)]
+pub struct Every;
 
 impl<S> Fold<AsTraversal, S> for Every
 where

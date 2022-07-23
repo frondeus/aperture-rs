@@ -4,9 +4,9 @@ use std::marker::PhantomData;
 
 use crate::optics::{
     fold::nested::NestedFold,
-    traversal::nested::NestedTraverse,
     AffineFold,
     AffineTraversal,
+    And,
     AsLens,
     Fold,
     Getter,
@@ -16,24 +16,10 @@ use crate::optics::{
     Traversal,
 };
 
-pub struct LensAndLens<L1, L2>(pub L1, pub L2);
-
-impl<S, L1, L2> Then<AsLens, S, L2> for L1
+impl<A1, A2, L1, L2, S, T> Setter<(A1, A2), S> for And<L1, L2>
 where
-    L1: Setter<AsLens, S> + Fold<AsLens, S> + Traversal<AsLens, S> + Getter<AsLens, S>,
-    <L1 as Fold<AsLens, S>>::D: Iterator,
-{
-    type Output = LensAndLens<L1, L2>;
-
-    fn then(self, l2: L2) -> Self::Output {
-        LensAndLens(self, l2)
-    }
-}
-
-impl<L1, L2, S, T> Setter<AsLens, S> for LensAndLens<L1, L2>
-where
-    L1: Setter<AsLens, S, T = T, O = T, D = S>,
-    L2: Setter<AsLens, T, D = T>,
+    L1: Setter<A1, S, T = T, O = T, D = S>,
+    L2: Setter<A2, T, D = T>,
 {
     type O = L2::O;
     type T = L2::T;
@@ -48,45 +34,45 @@ where
     }
 }
 
-impl<L1, L2, S> Fold<AsLens, S> for LensAndLens<L1, L2>
+impl<A1, A2, L1, L2, S> Fold<(A1, A2), S> for And<L1, L2>
 where
-    L1: Fold<AsLens, S>,
+    L1: Fold<A1, S>,
     L1::D: Iterator,
-    L2: Fold<AsLens, <<L1 as Fold<AsLens, S>>::D as Iterator>::Item> + Clone,
+    L2: Fold<A2, <<L1 as Fold<A1, S>>::D as Iterator>::Item> + Clone,
     L2::D: Iterator,
 {
-    type D = NestedFold<AsLens, L1::D, L2>;
+    type D = NestedFold<A2, L1::D, L2>;
 
     fn fold(&self, source: S) -> Self::D {
         NestedFold::new(self.0.fold(source), self.1.clone())
     }
 }
 
-impl<L1, L2, S> AffineFold<AsLens, S> for LensAndLens<L1, L2>
+impl<A1, A2, L1, L2, S> AffineFold<(A1, A2), S> for And<L1, L2>
 where
-    L1: Fold<AsLens, S>,
+    L1: Fold<A1, S>,
     L1::D: Iterator,
-    L2: Fold<AsLens, <<L1 as Fold<AsLens, S>>::D as Iterator>::Item> + Clone,
-    <L2 as Fold<AsLens, <<L1 as Fold<AsLens, S>>::D as Iterator>::Item>>::D: Iterator,
+    L2: Fold<A2, <<L1 as Fold<A1, S>>::D as Iterator>::Item> + Clone,
+    <L2 as Fold<A2, <<L1 as Fold<A1, S>>::D as Iterator>::Item>>::D: Iterator,
 
-    L1: AffineFold<AsLens, S>,
-    L2: AffineFold<AsLens, L1::T> + Clone,
+    L1: AffineFold<A1, S>,
+    L2: AffineFold<A2, L1::T> + Clone,
 {
     type T = L2::T;
 
-    fn preview(&self, source: S) -> Option<<Self as AffineFold<AsLens, S>>::T> {
+    fn preview(&self, source: S) -> Option<<Self as AffineFold<(A1, A2), S>>::T> {
         self.0.preview(source).and_then(|t| self.1.preview(t))
     }
 }
 
-impl<L1, L2, S> Traversal<AsLens, S> for LensAndLens<L1, L2>
+impl<A1, A2, L1, L2, S> Traversal<(A1, A2), S> for And<L1, L2>
 where
-    L1: Fold<AsLens, S>,
-    <L1 as Fold<AsLens, S>>::D: Iterator,
-    L2: Clone + Fold<AsLens, <<L1 as Fold<AsLens, S>>::D as Iterator>::Item>,
+    L1: Fold<A1, S>,
+    <L1 as Fold<A1, S>>::D: Iterator,
+    L2: Clone + Fold<A2, <<L1 as Fold<A1, S>>::D as Iterator>::Item>,
     L2::D: Iterator,
-    L1: Traversal<AsLens, S>,
-    L2: Traversal<AsLens, <<L1 as Fold<AsLens, S>>::D as Iterator>::Item>,
+    L1: Traversal<A1, S>,
+    L2: Traversal<A2, <<L1 as Fold<A1, S>>::D as Iterator>::Item>,
 {
     fn traverse<F, T>(&self, source: S, f: F) -> std::iter::Map<Self::D, F>
     where
@@ -96,38 +82,38 @@ where
     }
 }
 
-impl<L1, L2, S> Getter<AsLens, S> for LensAndLens<L1, L2>
+impl<A1, A2, L1, L2, S> Getter<(A1, A2), S> for And<L1, L2>
 where
-    L1: Getter<AsLens, S>,
+    L1: Getter<A1, S>,
     L1::D: Iterator,
-    L2: Fold<AsLens, <<L1 as Fold<AsLens, S>>::D as Iterator>::Item>,
-    <L2 as Fold<AsLens, <<L1 as Fold<AsLens, S>>::D as Iterator>::Item>>::D: Iterator,
+    L2: Fold<A2, <<L1 as Fold<A1, S>>::D as Iterator>::Item>,
+    <L2 as Fold<A2, <<L1 as Fold<A1, S>>::D as Iterator>::Item>>::D: Iterator,
     L2: Clone,
-    L2: Getter<AsLens, <L1 as Getter<AsLens, S>>::T>,
-    L1: AffineFold<AsLens, S>,
-    L2: AffineFold<AsLens, <L1 as AffineFold<AsLens, S>>::T>,
+    L2: Getter<A2, <L1 as Getter<A1, S>>::T>,
+    L1: AffineFold<A1, S>,
+    L2: AffineFold<A2, <L1 as AffineFold<A1, S>>::T>,
 {
-    type T = <L2 as Getter<AsLens, <L1 as Getter<AsLens, S>>::T>>::T;
+    type T = <L2 as Getter<A2, <L1 as Getter<A1, S>>::T>>::T;
 
-    fn view(&self, source: S) -> <Self as Getter<AsLens, S>>::T {
+    fn view(&self, source: S) -> <Self as Getter<(A1, A2), S>>::T {
         self.1.view(self.0.view(source))
     }
 }
 
-impl<L1, L2, S, Item> AffineTraversal<AsLens, S> for LensAndLens<L1, L2>
+impl<A1, A2, L1, L2, S, Item> AffineTraversal<(A1, A2), S> for And<L1, L2>
 where
-    L1: Fold<AsLens, S>,
-    <L1 as Fold<AsLens, S>>::D: Iterator,
-    L2: Clone + Fold<AsLens, <<L1 as Fold<AsLens, S>>::D as Iterator>::Item>,
-    <L2 as Fold<AsLens, <<L1 as Fold<AsLens, S>>::D as Iterator>::Item>>::D: Iterator,
-    <L2 as Fold<AsLens, <L1 as AffineFold<AsLens, S>>::T>>::D: Iterator<Item = Item>,
-    L1: Traversal<AsLens, S>,
-    L2: Traversal<AsLens, <<L1 as Fold<AsLens, S>>::D as Iterator>::Item>,
-    L1: AffineFold<AsLens, S>,
-    L2: AffineFold<AsLens, L1::T> + Clone,
-    L1: AffineTraversal<AsLens, S>,
-    L2: AffineTraversal<AsLens, L1::T>,
-    Self: Fold<AsLens, S>,
+    L1: Fold<A1, S>,
+    <L1 as Fold<A1, S>>::D: Iterator,
+    L2: Clone + Fold<A2, <<L1 as Fold<A1, S>>::D as Iterator>::Item>,
+    <L2 as Fold<A2, <<L1 as Fold<A1, S>>::D as Iterator>::Item>>::D: Iterator,
+    <L2 as Fold<A2, <L1 as AffineFold<A1, S>>::T>>::D: Iterator<Item = Item>,
+    L1: Traversal<A1, S>,
+    L2: Traversal<A2, <<L1 as Fold<A1, S>>::D as Iterator>::Item>,
+    L1: AffineFold<A1, S>,
+    L2: AffineFold<A2, L1::T> + Clone,
+    L1: AffineTraversal<A1, S>,
+    L2: AffineTraversal<A2, L1::T>,
+    Self: Fold<(A1, A2), S>,
     Self::D: Iterator<Item = Item>,
 {
     fn map_opt<T, F>(&self, source: S, f: F) -> Option<T>
@@ -142,8 +128,12 @@ where
 mod tests {
     use super::*;
     use crate::{
-        data::{Person, Test},
-        optics::{AffineFold, AffineTraversal, AsLens, Fold, Traversal},
+        data::{
+            lenses::{PersonMother, PersonName, PersonParents},
+            Person,
+            Test,
+        },
+        optics::{AffineFold, AffineTraversal, AsLens, Every, Filtered, Fold, Traversal},
     };
 
     fn olivier() -> Person {
@@ -165,28 +155,12 @@ mod tests {
         }
     }
     //     fn is_lens<'a, L: LensLike<'a, S, G, M>, S, G, M>(_l: L) {}
-    #[test]
-    fn as_view() {
-        let lens = PersonMother.then(PersonName);
-        let moms_name = lens.view(olivier());
-        assert_eq!(&moms_name, "Anne");
-    }
-
-    #[test]
-    fn as_aff_fold() {
-        let lens = PersonMother.then(PersonName);
-        let moms_name = lens.preview(olivier());
-        assert_eq!(moms_name, Some("Anne".to_string()));
-    }
 
     #[test]
     fn as_setter() {
-        let lens = PersonMother.then(PersonName);
+        let lens: And<PersonMother, PersonName> = PersonMother.then(PersonName);
         let new_olivier = lens.set(olivier(), |name| name.to_uppercase());
         assert_eq!(new_olivier.mother().name, "ANNE");
-
-        // let mom = lens.view(olivier());
-        // assert_eq!(&mom, "Anne");
     }
 
     #[test]
@@ -195,9 +169,13 @@ mod tests {
         let mut iter = Fold::fold(&lens, olivier());
         let mums_name = iter.next();
         assert_eq!(mums_name, Some("Anne".to_string()));
+    }
 
-        // let mom = lens.view(olivier());
-        // assert_eq!(&mom, "Anne");
+    #[test]
+    fn as_aff_fold() {
+        let lens = PersonMother.then(PersonName);
+        let moms_name = lens.preview(olivier());
+        assert_eq!(moms_name, Some("Anne".to_string()));
     }
 
     #[test]
@@ -209,171 +187,56 @@ mod tests {
     }
 
     #[test]
+    fn as_view() {
+        let lens = PersonMother.then(PersonName);
+        let moms_name = lens.view(olivier());
+        assert_eq!(&moms_name, "Anne");
+    }
+
+    #[test]
     fn as_aff_traversal() {
         let lens = PersonMother.then(PersonName);
         let mums_name = lens.map_opt(olivier(), |name| name.to_uppercase());
         assert_eq!(mums_name, Some("ANNE".to_string()));
     }
 
-    #[derive(Clone)]
-    struct PersonName;
-
-    impl Getter<AsLens, Person> for PersonName {
-        type T = String;
-
-        fn view(&self, source: Person) -> <Self as Getter<AsLens, Person>>::T {
-            source.name
-        }
+    #[test]
+    fn collections() {
+        let lens = PersonParents.then(Every);
+        let mut parents = lens.fold(olivier());
+        assert_eq!(parents.next().unwrap().name, "Anne");
+        assert_eq!(parents.next().unwrap().name, "Thierry");
+        assert_eq!(parents.next(), None);
     }
-    impl AffineFold<AsLens, Person> for PersonName {
-        type T = String;
 
-        fn preview(&self, source: Person) -> Option<<Self as AffineFold<AsLens, Person>>::T> {
-            Some(source.name)
-        }
-    }
-    impl Fold<AsLens, Person> for PersonName {
-        type D = std::option::IntoIter<String>;
+    #[test]
+    fn long_collections() {
+        let lens = PersonParents.then(Every).then(PersonName);
+        let mut parents = lens.fold(olivier());
+        assert_eq!(parents.next().unwrap(), "Anne");
+        assert_eq!(parents.next().unwrap(), "Thierry");
+        assert_eq!(parents.next(), None);
 
-        fn fold(&self, source: Person) -> Self::D {
-            Some(source.name).into_iter()
-        }
-    }
-    impl AffineTraversal<AsLens, Person> for PersonName {
-        fn map_opt<T, F>(&self, source: Person, f: F) -> Option<T>
-        where
-            F: FnOnce(String) -> T,
-        {
-            Some(source.name).map(f)
-        }
-    }
-    impl Traversal<AsLens, Person> for PersonName {
-        fn traverse<F, T>(&self, source: Person, f: F) -> std::iter::Map<Self::D, F>
-        where
-            F: FnMut(String) -> T,
-        {
-            Some(source.name).into_iter().map(f)
-        }
-    }
-    impl Setter<AsLens, Person> for PersonName {
-        type T = String;
-        type O = String;
+        let lens = PersonParents
+            .then(Filtered(|person: &Person| person.age < 56))
+            .then(PersonName);
+        let mut parents = lens.fold(olivier());
+        assert_eq!(parents.next().unwrap(), "Anne");
+        assert_eq!(parents.next(), None);
 
-        type D = Person;
+        let lens = PersonParents
+            .then(Filtered(|person: &Person| person.age > 55))
+            .then(PersonName);
+        let mut parents = lens.fold(olivier());
+        assert_eq!(parents.next().unwrap(), "Thierry");
+        assert_eq!(parents.next(), None);
 
-        fn set<F>(&self, mut source: Person, mut f: F) -> Self::D
-        where
-            F: FnMut(Self::O) -> String,
-        {
-            source.name = f(source.name);
-            source
-        }
-    }
-    struct PersonMother;
+        let lens = PersonParents
+            .then(Filtered(|person: &Person| person.age > 55))
+            .then(PersonName);
+        let new_olivier = lens.set(olivier(), |_t| "Mark".to_string());
 
-    impl Getter<AsLens, Person> for PersonMother {
-        type T = Person;
-
-        fn view(&self, source: Person) -> <Self as Getter<AsLens, Person>>::T {
-            source.parents.into_iter().next().unwrap()
-        }
-    }
-    impl AffineFold<AsLens, Person> for PersonMother {
-        type T = Person;
-
-        fn preview(&self, source: Person) -> Option<<Self as AffineFold<AsLens, Person>>::T> {
-            source.parents.into_iter().next()
-        }
-    }
-    impl Fold<AsLens, Person> for PersonMother {
-        type D = std::iter::Take<std::vec::IntoIter<Person>>;
-
-        fn fold(&self, source: Person) -> Self::D {
-            source.parents.into_iter().take(1)
-        }
-    }
-    impl AffineTraversal<AsLens, Person> for PersonMother {
-        fn map_opt<T, F>(&self, source: Person, f: F) -> Option<T>
-        where
-            F: FnOnce(Person) -> T,
-        {
-            source.parents.into_iter().take(1).next().map(f)
-        }
-    }
-    impl Traversal<AsLens, Person> for PersonMother {
-        fn traverse<F, T>(&self, source: Person, f: F) -> std::iter::Map<Self::D, F>
-        where
-            F: FnMut(Person) -> T,
-        {
-            source.parents.into_iter().take(1).map(f)
-        }
-    }
-    impl Setter<AsLens, Person> for PersonMother {
-        type T = Person;
-        type O = Person;
-
-        type D = Person;
-
-        fn set<F>(&self, mut source: Person, f: F) -> Self::D
-        where
-            F: FnMut(Self::O) -> Person,
-        {
-            let mut iter = source.parents.into_iter();
-            let new_mom = iter.next().map(f);
-            source.parents = new_mom.into_iter().chain(iter).collect();
-            source
-        }
-    }
-    struct PersonParents;
-    impl Getter<AsLens, Person> for PersonParents {
-        type T = Vec<Person>;
-
-        fn view(&self, source: Person) -> <Self as Getter<AsLens, Person>>::T {
-            source.parents
-        }
-    }
-    impl AffineFold<AsLens, Person> for PersonParents {
-        type T = Vec<Person>;
-
-        fn preview(&self, source: Person) -> Option<<Self as AffineFold<AsLens, Person>>::T> {
-            Some(source.parents)
-        }
-    }
-    impl Fold<AsLens, Person> for PersonParents {
-        type D = std::option::IntoIter<Vec<Person>>;
-
-        fn fold(&self, source: Person) -> Self::D {
-            Some(source.parents).into_iter()
-        }
-    }
-    impl AffineTraversal<AsLens, Person> for PersonParents {
-        fn map_opt<T, F>(&self, source: Person, f: F) -> Option<T>
-        where
-            F: FnOnce(Vec<Person>) -> T,
-        {
-            Some(source.parents).map(f)
-        }
-    }
-    impl Traversal<AsLens, Person> for PersonParents {
-        fn traverse<F, T>(&self, source: Person, f: F) -> std::iter::Map<Self::D, F>
-        where
-            F: FnMut(Vec<Person>) -> T,
-        {
-            Some(source.parents).into_iter().map(f)
-        }
-    }
-    impl Setter<AsLens, Person> for PersonParents {
-        type T = Vec<Person>;
-        type O = Vec<Person>;
-
-        type D = Person;
-
-        fn set<F>(&self, mut source: Person, mut f: F) -> Self::D
-        where
-            F: FnMut(Self::O) -> Vec<Person>,
-        {
-            source.parents = f(source.parents);
-            source
-        }
+        assert_eq!(new_olivier.parents[0].name, "Anne");
+        assert_eq!(new_olivier.parents[1].name, "Mark");
     }
 }
