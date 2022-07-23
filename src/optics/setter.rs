@@ -1,6 +1,6 @@
-use super::And;
+use crate::prelude::And;
 
-pub struct AsSetterMethod;
+pub struct AsSetter;
 pub trait Setter<As, S> {
     type O;
     type D;
@@ -27,22 +27,6 @@ where
         self.0.set(source, |o| self.1.set(o, f.clone()))
     }
 }
-// impl<S, D, M, T> Setter<AsSetterMethod, S> for M
-// where
-//     M: Method<S, (T,), Output = D>,
-// {
-//     type D = D;
-//     type O = ();
-//     type T = T;
-
-//     fn set<F>(&self, source: S, mut f: F) -> Self::D
-//     where
-//         F: FnMut(Self::O) -> Self::T + Clone,
-//     {
-//         let new = f(());
-//         self.mcall(source, (new,))
-//     }
-// }
 
 #[cfg(test)]
 mod tests {
@@ -52,7 +36,7 @@ mod tests {
             lenses::{PersonMother, PersonName},
             Person,
         },
-        optics::Then,
+        prelude::*,
     };
 
     #[test]

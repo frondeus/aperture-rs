@@ -1,17 +1,17 @@
-use super::{AffineFold, And, Fold, Setter, Traversal};
+use crate::prelude::*;
 
 pub struct AsAffineTraversal;
 pub trait AffineTraversal<As, S>
 where
     Self: AffineFold<As, S> + Traversal<As, S>,
-    Self::D: Iterator,
+    <Self as Fold<As, S>>::D: Iterator,
 {
     fn map_opt<T, F>(&self, source: S, f: F) -> Option<T>
     where
-        F: FnOnce(<Self::D as Iterator>::Item) -> T;
+        F: FnOnce(<<Self as Fold<As, S>>::D as Iterator>::Item) -> T;
 }
 
-impl<A1, A2, L1, L2, S, Item> AffineTraversal<(A1, A2), S> for And<L1, L2>
+impl<A1, A2, L1, L2, S, Item, SetT> AffineTraversal<(A1, A2), S> for And<L1, L2>
 where
     L1: Fold<A1, S>,
     <L1 as Fold<A1, S>>::D: Iterator,
@@ -21,141 +21,19 @@ where
     L1: Traversal<A1, S>,
     L2: Traversal<A2, <<L1 as Fold<A1, S>>::D as Iterator>::Item>,
     L1: AffineFold<A1, S>,
-    L2: AffineFold<A2, L1::T> + Clone,
+    L2: AffineFold<A2, <L1 as AffineFold<A1, S>>::T> + Clone,
     L1: AffineTraversal<A1, S>,
-    L2: AffineTraversal<A2, L1::T>,
+    L2: AffineTraversal<A2, <L1 as AffineFold<A1, S>>::T>,
     Self: Fold<(A1, A2), S>,
-    Self::D: Iterator<Item = Item>,
+    <Self as Fold<(A1, A2), S>>::D: Iterator<Item = Item>,
+    L1: Setter<A1, S, T = SetT, O = SetT, D = S>,
+    L2: Setter<A2, SetT, D = SetT>,
 {
     fn map_opt<T, F>(&self, source: S, f: F) -> Option<T>
     where
-        F: FnOnce(<Self::D as Iterator>::Item) -> T,
+        F: FnOnce(<<Self as Fold<(A1, A2), S>>::D as Iterator>::Item) -> T,
     {
         self.0.preview(source).and_then(|t| self.1.map_opt(t, f))
-    }
-}
-// #[cfg(test)]
-// pub fn assert_affine_traversal<As, Optic, S, Out>(_o: Optic)
-// where
-//     Optic: AffineTraversal<As, S, Out, crate::identity::Identity, In = Out>,
-// {
-// }
-pub struct First;
-impl<S> Fold<AsAffineTraversal, S> for First
-where
-    S: IntoIterator,
-{
-    type D = std::iter::Take<S::IntoIter>;
-
-    fn fold(&self, source: S) -> Self::D {
-        source.into_iter().take(1)
-    }
-}
-impl<S> AffineFold<AsAffineTraversal, S> for First
-where
-    S: IntoIterator,
-{
-    type T = S::Item;
-    fn preview(&self, source: S) -> Option<<Self as AffineFold<AsAffineTraversal, S>>::T> {
-        source.into_iter().next()
-    }
-}
-
-impl<S> Setter<AsAffineTraversal, S> for First
-where
-    S: IntoIterator + FromIterator<S::Item>,
-{
-    type T = S::Item;
-    type O = S::Item;
-
-    type D = S;
-
-    fn set<F>(&self, source: S, f: F) -> Self::D
-    where
-        F: FnMut(Self::O) -> S::Item,
-    {
-        let mut iter = source.into_iter();
-        let first = iter.next().map(f);
-        first.into_iter().chain(iter).collect()
-    }
-}
-
-impl<S> Traversal<AsAffineTraversal, S> for First
-where
-    S: IntoIterator + FromIterator<S::Item>,
-{
-    fn traverse<F, T>(&self, source: S, f: F) -> std::iter::Map<Self::D, F>
-    where
-        F: FnMut(S::Item) -> T,
-    {
-        source.into_iter().take(1).map(f)
-    }
-}
-
-impl<S> AffineTraversal<AsAffineTraversal, S> for First
-where
-    S: IntoIterator + FromIterator<S::Item>,
-{
-    // type O = S::Item;
-
-    fn map_opt<T, F>(&self, source: S, f: F) -> Option<T>
-    where
-        F: FnOnce(S::Item) -> T,
-    {
-        source.into_iter().next().map(f)
-    }
-}
-
-pub struct At<Key>(Key);
-// impl<O, T, F> AffineTraversal<AsAffineTraversal, Vec<O>, T, F> for At<usize> {
-//     fn map_opt(&self, source: Vec<O>, f: F) -> Option<T> {
-//         source.get(self.A).cloned()
-//     }
-// }
-// impl<O, T, F> Traversal<AsAffineTraversal, Vec<O>, T, F> for At<usize> {
-//     type O;
-
-//     type D;
-
-//     fn traverse(
-//         &self,
-//         source: Vec<O>,
-//         f: F,
-//     ) -> <Self as Traversal<AsAffineTraversal, Vec<O>, T, F>>::D {
-//         todo!()
-//     }
-// }
-impl<O> Setter<AsAffineTraversal, Vec<O>> for At<usize> {
-    type T = O;
-    type O = O;
-
-    type D = Vec<O>;
-
-    fn set<F>(&self, source: Vec<O>, f: F) -> Self::D
-    where
-        F: FnMut(Self::O) -> O,
-    {
-        source.into_iter().map(f).collect()
-    }
-}
-impl<O> AffineFold<AsAffineTraversal, Vec<O>> for At<usize>
-where
-    O: Clone,
-{
-    type T = O;
-
-    fn preview(&self, source: Vec<O>) -> Option<O> {
-        source.get(self.0).cloned()
-    }
-}
-impl<O> Fold<AsAffineTraversal, Vec<O>> for At<usize>
-where
-    O: Clone,
-{
-    type D = std::option::IntoIter<O>;
-
-    fn fold(&self, source: Vec<O>) -> Self::D {
-        source.get(self.0).cloned().into_iter()
     }
 }
 
@@ -167,36 +45,8 @@ mod tests {
             lenses::{PersonMother, PersonName},
             Person,
         },
-        optics::Then,
+        prelude::{first::First, Then},
     };
-
-    #[test]
-    fn affine_traversal() {
-        // let test: Option<String> = Some("Foo".into());
-
-        // assert_eq!(
-        //     Option::as_ref
-        //         .map_opt(&test, |x| x.to_uppercase())
-        //         .expect("some"),
-        //     "FOO"
-        // );
-
-        // let test: Option<String> = Some("Foo".into());
-        // assert_eq!(
-        //     Identity::option::<String>
-        //         .map_opt(test, |x| x.to_uppercase())
-        //         .expect("some"),
-        //     "FOO"
-        // );
-        // let mut map: HashMap<usize, String> = HashMap::new();
-        // map.insert(1, "Foo".into());
-
-        // let test: Option<String> = Some("Foo".into());
-        // assert_eq!(
-        //     HashMap::get.with_args((&1,)).preview(&map).expect("some"),
-        //     "Foo"
-        // );
-    }
 
     #[test]
     fn as_traversal() {

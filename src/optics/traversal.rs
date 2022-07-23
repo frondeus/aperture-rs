@@ -1,126 +1,32 @@
-use super::{And, Fold, Setter};
+use crate::prelude::*;
 
 pub struct AsTraversal;
 pub trait Traversal<As, S>
 where
-    Self: Fold<As, S>,
-    Self::D: Iterator,
+    Self: Fold<As, S> + Setter<As, S>,
+    <Self as Fold<As, S>>::D: Iterator,
 {
-    fn traverse<F, T>(&self, source: S, f: F) -> std::iter::Map<Self::D, F>
+    fn traverse<F, T>(&self, source: S, f: F) -> std::iter::Map<<Self as Fold<As, S>>::D, F>
     where
-        F: FnMut(<Self::D as Iterator>::Item) -> T;
+        F: FnMut(<<Self as Fold<As, S>>::D as Iterator>::Item) -> T;
 }
 
-impl<A1, A2, L1, L2, S> Traversal<(A1, A2), S> for And<L1, L2>
+impl<A1, A2, L1, L2, S, SetT> Traversal<(A1, A2), S> for And<L1, L2>
 where
     L1: Fold<A1, S>,
     <L1 as Fold<A1, S>>::D: Iterator,
     L2: Clone + Fold<A2, <<L1 as Fold<A1, S>>::D as Iterator>::Item>,
-    L2::D: Iterator,
+    <L2 as Fold<A2, <<L1 as Fold<A1, S>>::D as Iterator>::Item>>::D: Iterator,
     L1: Traversal<A1, S>,
     L2: Traversal<A2, <<L1 as Fold<A1, S>>::D as Iterator>::Item>,
+    L1: Setter<A1, S, T = SetT, O = SetT, D = S>,
+    L2: Setter<A2, SetT, D = SetT>,
 {
-    fn traverse<F, T>(&self, source: S, f: F) -> std::iter::Map<Self::D, F>
+    fn traverse<F, T>(&self, source: S, f: F) -> std::iter::Map<<Self as Fold<(A1, A2), S>>::D, F>
     where
-        F: FnMut(<Self::D as Iterator>::Item) -> T,
+        F: FnMut(<<Self as Fold<(A1, A2), S>>::D as Iterator>::Item) -> T,
     {
         self.fold(source).map(f)
-    }
-}
-
-#[derive(Clone)]
-pub struct Filtered<Filter>(pub Filter);
-
-impl<S, Filter> Fold<AsTraversal, S> for Filtered<Filter>
-where
-    Filter: for<'a> FnMut(&'a S::Item) -> bool + Clone,
-    S: IntoIterator,
-{
-    type D = std::iter::Filter<S::IntoIter, Filter>;
-
-    fn fold(&self, source: S) -> Self::D {
-        source.into_iter().filter(self.0.clone())
-    }
-}
-
-impl<S, Filter> Setter<AsTraversal, S> for Filtered<Filter>
-where
-    Filter: for<'a> FnMut(&'a S::Item) -> bool + Clone,
-    S: IntoIterator + FromIterator<S::Item>,
-{
-    type T = S::Item;
-    type O = S::Item;
-
-    type D = S;
-
-    fn set<F>(&self, source: S, mut f: F) -> Self::D
-    where
-        F: FnMut(Self::O) -> S::Item,
-    {
-        source
-            .into_iter()
-            .map(move |x| match (self.0.clone())(&x) {
-                true => f(x),
-                false => x,
-            })
-            .collect()
-    }
-}
-
-impl<S, Filter> Traversal<AsTraversal, S> for Filtered<Filter>
-where
-    Filter: for<'a> FnMut(&'a S::Item) -> bool + Clone,
-    S: IntoIterator + FromIterator<S::Item>,
-{
-    fn traverse<F, T>(&self, source: S, f: F) -> std::iter::Map<Self::D, F>
-    where
-        F: FnMut(S::Item) -> T,
-    {
-        source.into_iter().filter(self.0.clone()).map(f)
-    }
-}
-
-#[derive(Clone)]
-pub struct Every;
-
-impl<S> Fold<AsTraversal, S> for Every
-where
-    S: IntoIterator,
-{
-    type D = S::IntoIter;
-
-    fn fold(&self, source: S) -> Self::D {
-        source.into_iter()
-    }
-}
-
-impl<S, T> Setter<AsTraversal, S> for Every
-where
-    S: IntoIterator<Item = T> + FromIterator<T>,
-    // for<'a> &'a mut S: IntoIterator<Item = &'a mut T>,
-{
-    type T = T;
-    type O = T;
-
-    type D = S;
-
-    fn set<F>(&self, source: S, f: F) -> Self::D
-    where
-        F: FnMut(T) -> T,
-    {
-        source.into_iter().map(f).collect()
-    }
-}
-
-impl<S> Traversal<AsTraversal, S> for Every
-where
-    S: IntoIterator + FromIterator<S::Item>,
-{
-    fn traverse<F, T>(&self, source: S, f: F) -> std::iter::Map<Self::D, F>
-    where
-        F: FnMut(S::Item) -> T,
-    {
-        source.into_iter().map(f)
     }
 }
 
@@ -132,7 +38,7 @@ mod tests {
             lenses::{PersonMother, PersonName},
             Person,
         },
-        optics::Then,
+        prelude::{every::Every, filtered::Filtered},
     };
 
     #[test]

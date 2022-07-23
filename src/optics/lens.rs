@@ -1,19 +1,19 @@
 // mod tuple;
 
-use super::{AffineTraversal, Getter};
+use crate::prelude::*;
 
 pub struct AsLens;
 pub trait Lens<As, S>
 where
     Self: Getter<As, S> + AffineTraversal<As, S>,
-    Self::D: Iterator,
+    <Self as Fold<As, S>>::D: Iterator,
 {
 }
 
 impl<As, L, S> Lens<As, S> for L
 where
     L: Getter<As, S> + AffineTraversal<As, S>,
-    L::D: Iterator,
+    <L as Fold<As, S>>::D: Iterator,
 {
 }
 
@@ -25,12 +25,9 @@ mod tests {
     //     };
 
     use super::*;
-    use crate::{
-        data::{
-            lenses::{PersonMother, PersonParents},
-            Person,
-        },
-        optics::Setter,
+    use crate::data::{
+        lenses::{PersonMother, PersonParents},
+        Person,
     };
 
     fn olivier() -> Person {

@@ -13,3 +13,7 @@ pub mod optics;
 
 #[cfg(test)]
 mod data;
+
+pub mod prelude {
+    pub use crate::optics::prelude::*;
+}

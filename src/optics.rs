@@ -1,30 +1,18 @@
 // 0 degree - Basic blocks
-mod setter;
-pub use setter::*;
-
-mod review;
-pub use review::*;
-
-mod fold;
-pub use fold::*;
+pub mod fold;
+pub mod review;
+pub mod setter;
 
 // 1st degree
-mod affine_fold;
-pub use affine_fold::*;
-
-mod traversal;
-pub use traversal::*;
+pub mod affine_fold;
+pub mod traversal;
 
 // 2nd degree
-mod affine_traversal; // known as Optional
-pub use affine_traversal::*;
-
-mod getter;
-pub use getter::*;
+pub mod affine_traversal; // known as Optional
+pub mod getter;
 
 // 3rd degree - Complex
-mod lens;
-pub use lens::*;
+pub mod lens;
 // mod rev_lens;
 // mod prism;
 // mod rev_prism;
@@ -33,18 +21,33 @@ pub use lens::*;
 // mod iso;
 
 // Combinators
-mod then;
-pub use then::*;
+pub mod impls;
+pub mod then;
+
+pub mod prelude {
+    pub use crate::optics::{
+        affine_fold::AffineFold,
+        affine_traversal::AffineTraversal,
+        fold::Fold,
+        getter::Getter,
+        impls::*,
+        lens::Lens,
+        review::Review,
+        setter::Setter,
+        then::{And, Then},
+        traversal::Traversal,
+    };
+}
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+
     use crate::{
         data::{
             lenses::{PersonName, PersonParents},
             Person,
         },
-        optics::{Filtered, Fold},
+        prelude::{every::Every, filtered::Filtered, *},
     };
 
     #[test]
@@ -81,6 +84,7 @@ mod tests {
         let lens = PersonParents
             .then(Filtered(|person: &Person| person.age > 55))
             .then(PersonName);
+
         let new_olivier = lens.set(Person::olivier(), |_t| "Mark".to_string());
 
         assert_eq!(new_olivier.parents[0].name, "Anne");

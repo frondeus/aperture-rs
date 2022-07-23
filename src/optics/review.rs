@@ -1,12 +1,12 @@
 use crate::method::Method;
 
-pub struct AsReviewMethod;
+pub struct AsReview;
 pub trait Review<As, S> {
     type T;
     fn review(&self, source: S) -> Self::T;
 }
 
-impl<S, M, T> Review<AsReviewMethod, S> for M
+impl<S, M, T> Review<AsReview, S> for M
 where
     M: Method<S, (), Output = T>,
 {
