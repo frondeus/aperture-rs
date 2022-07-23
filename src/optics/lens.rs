@@ -10,13 +10,12 @@ where
 {
 }
 
-// impl<As, L, S, T, F> LensLike<As, S, T, F> for L
-// where
-//     L: Getter<As, S> + AffineTraversal<As, S, T, F>,
-
-//     F: FnMut(<Self as Traversal<As, S, T, F>>::O) -> T,
-// {
-// }
+impl<As, L, S> Lens<As, S> for L
+where
+    L: Getter<As, S> + AffineTraversal<As, S>,
+    L::D: Iterator,
+{
+}
 
 #[cfg(test)]
 mod tests {
