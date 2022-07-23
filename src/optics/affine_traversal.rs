@@ -2,13 +2,14 @@ use super::{AffineFold, Fold, Setter, Traversal};
 use crate::method::Method;
 
 pub struct AsAffineTraversal;
-pub trait AffineTraversal<As, S, T, F>
+pub trait AffineTraversal<As, S>
 where
-    // Self: Traversal<As, S, Out, F> + AffineFold<As, S>,
-    Self: AffineFold<As, S> + Traversal<As, S, T, F>,
-    F: FnMut(<Self as Traversal<As, S, T, F>>::O) -> T,
+    Self: AffineFold<As, S> + Traversal<As, S>,
+    Self::D: Iterator,
 {
-    fn map_opt(&self, source: S, f: F) -> Option<T>;
+    fn map_opt<T, F>(&self, source: S, f: F) -> Option<T>
+    where
+        F: FnOnce(<Self::D as Iterator>::Item) -> T;
 }
 
 // #[cfg(test)]
@@ -57,28 +58,28 @@ where
     }
 }
 
-impl<S, T, F> Traversal<AsAffineTraversal, S, T, F> for First
+impl<S> Traversal<AsAffineTraversal, S> for First
 where
     S: IntoIterator + FromIterator<S::Item>,
-    F: FnMut(S::Item) -> T,
 {
-    type O = S::Item;
-
-    type D = std::iter::Map<std::iter::Take<S::IntoIter>, F>;
-
-    fn traverse(&self, source: S, f: F) -> <Self as Traversal<AsAffineTraversal, S, T, F>>::D {
+    fn traverse<F, T>(&self, source: S, f: F) -> std::iter::Map<Self::D, F>
+    where
+        F: FnMut(S::Item) -> T,
+    {
         source.into_iter().take(1).map(f)
     }
 }
 
-impl<S, T, F> AffineTraversal<AsAffineTraversal, S, T, F> for First
+impl<S> AffineTraversal<AsAffineTraversal, S> for First
 where
     S: IntoIterator + FromIterator<S::Item>,
-    F: FnMut(S::Item) -> T,
 {
     // type O = S::Item;
 
-    fn map_opt(&self, source: S, f: F) -> Option<T> {
+    fn map_opt<T, F>(&self, source: S, f: F) -> Option<T>
+    where
+        F: FnOnce(S::Item) -> T,
+    {
         source.into_iter().next().map(f)
     }
 }

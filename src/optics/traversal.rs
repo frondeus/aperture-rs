@@ -4,15 +4,14 @@ use crate::method::Method;
 pub mod nested;
 
 pub struct AsTraversal;
-pub trait Traversal<As, S, T, F>
+pub trait Traversal<As, S>
 where
-    Self: Fold<As, S> + Setter<As, S, T = <Self as Traversal<As, S, T, F>>::O, D = S>,
-    F: FnMut(<Self as Traversal<As, S, T, F>>::O) -> T,
+    Self: Fold<As, S>,
+    Self::D: Iterator,
 {
-    type O;
-    type D: Iterator<Item = T>;
-
-    fn traverse(&self, source: S, f: F) -> <Self as Traversal<As, S, T, F>>::D;
+    fn traverse<F, T>(&self, source: S, f: F) -> std::iter::Map<Self::D, F>
+    where
+        F: FnMut(<Self::D as Iterator>::Item) -> T;
 }
 
 struct Filtered<Filter>(Filter);
@@ -53,17 +52,15 @@ where
     }
 }
 
-impl<S, F, T, Filter> Traversal<AsTraversal, S, T, F> for Filtered<Filter>
+impl<S, Filter> Traversal<AsTraversal, S> for Filtered<Filter>
 where
     Filter: for<'a> FnMut(&'a S::Item) -> bool + Clone,
     S: IntoIterator + FromIterator<S::Item>,
-    F: FnMut(S::Item) -> T,
 {
-    type O = S::Item;
-
-    type D = std::iter::Map<std::iter::Filter<S::IntoIter, Filter>, F>;
-
-    fn traverse(&self, source: S, f: F) -> <Self as Traversal<AsTraversal, S, T, F>>::D {
+    fn traverse<F, T>(&self, source: S, f: F) -> std::iter::Map<Self::D, F>
+    where
+        F: FnMut(S::Item) -> T,
+    {
         source.into_iter().filter(self.0.clone()).map(f)
     }
 }
@@ -109,17 +106,14 @@ where
     }
 }
 
-impl<S, F, T> Traversal<AsTraversal, S, T, F> for Every
+impl<S> Traversal<AsTraversal, S> for Every
 where
     S: IntoIterator + FromIterator<S::Item>,
-    // for<'a> &'a mut S: IntoIterator<Item = S::Item>,
-    F: FnMut(S::Item) -> T,
 {
-    type O = S::Item;
-
-    type D = std::iter::Map<S::IntoIter, F>;
-
-    fn traverse(&self, source: S, f: F) -> <Self as Traversal<AsTraversal, S, T, F>>::D {
+    fn traverse<F, T>(&self, source: S, f: F) -> std::iter::Map<Self::D, F>
+    where
+        F: FnMut(S::Item) -> T,
+    {
         source.into_iter().map(f)
     }
 }

@@ -23,10 +23,10 @@ mod getter;
 pub use getter::*;
 
 // 3rd degree - Complex
-// mod rev_lens;
-// mod prism;
 mod lens;
 pub use lens::*;
+// mod rev_lens;
+// mod prism;
 // mod rev_prism;
 
 // 4th degree

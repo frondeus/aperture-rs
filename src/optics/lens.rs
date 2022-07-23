@@ -3,20 +3,20 @@
 use super::{AffineFold, AffineTraversal, Fold, Getter, Setter, Traversal};
 
 pub struct AsLens;
-pub trait Lens<As, S, T, F>
+pub trait Lens<As, S>
 where
-    Self: Getter<As, S> + AffineTraversal<As, S, T, F>,
-    F: FnMut(<Self as Traversal<As, S, T, F>>::O) -> T,
+    Self: Getter<As, S> + AffineTraversal<As, S>,
+    Self::D: Iterator,
 {
 }
 
-impl<As, L, S, T, F> Lens<As, S, T, F> for L
-where
-    L: Getter<As, S> + AffineTraversal<As, S, T, F>,
+// impl<As, L, S, T, F> LensLike<As, S, T, F> for L
+// where
+//     L: Getter<As, S> + AffineTraversal<As, S, T, F>,
 
-    F: FnMut(<Self as Traversal<As, S, T, F>>::O) -> T,
-{
-}
+//     F: FnMut(<Self as Traversal<As, S, T, F>>::O) -> T,
+// {
+// }
 
 #[cfg(test)]
 mod tests {
@@ -46,24 +46,20 @@ mod tests {
             Some(source.parents).into_iter()
         }
     }
-    impl<T, F> AffineTraversal<AsLens, Person, T, F> for PersonParents
-    where
-        F: FnMut(Vec<Person>) -> T,
-    {
-        fn map_opt(&self, source: Person, f: F) -> Option<T> {
+    impl AffineTraversal<AsLens, Person> for PersonParents {
+        fn map_opt<T, F>(&self, source: Person, f: F) -> Option<T>
+        where
+            F: FnOnce(<Self::D as Iterator>::Item) -> T,
+        {
             Some(source.parents).map(f)
         }
     }
-    impl<T, F> Traversal<AsLens, Person, T, F> for PersonParents
-    where
-        F: FnMut(Vec<Person>) -> T,
-    {
-        type O = Vec<Person>;
-
-        type D = std::option::IntoIter<T>;
-
-        fn traverse(&self, source: Person, f: F) -> <Self as Traversal<AsLens, Person, T, F>>::D {
-            Some(source.parents).map(f).into_iter()
+    impl Traversal<AsLens, Person> for PersonParents {
+        fn traverse<F, T>(&self, source: Person, f: F) -> std::iter::Map<Self::D, F>
+        where
+            F: FnMut(Vec<Person>) -> T,
+        {
+            Some(source.parents).into_iter().map(f)
         }
     }
     impl Setter<AsLens, Person> for PersonParents {
@@ -104,23 +100,19 @@ mod tests {
             source.parents.into_iter().take(1)
         }
     }
-    impl<T, F> AffineTraversal<AsLens, Person, T, F> for PersonMother
-    where
-        F: FnMut(Person) -> T,
-    {
-        fn map_opt(&self, source: Person, f: F) -> Option<T> {
-            source.parents.into_iter().take(1).map(f).next()
+    impl AffineTraversal<AsLens, Person> for PersonMother {
+        fn map_opt<T, F>(&self, source: Person, f: F) -> Option<T>
+        where
+            F: FnOnce(Person) -> T,
+        {
+            source.parents.into_iter().take(1).next().map(f)
         }
     }
-    impl<T, F> Traversal<AsLens, Person, T, F> for PersonMother
-    where
-        F: FnMut(Person) -> T,
-    {
-        type O = Person;
-
-        type D = std::iter::Map<std::iter::Take<std::vec::IntoIter<Person>>, F>;
-
-        fn traverse(&self, source: Person, f: F) -> <Self as Traversal<AsLens, Person, T, F>>::D {
+    impl Traversal<AsLens, Person> for PersonMother {
+        fn traverse<F, T>(&self, source: Person, f: F) -> std::iter::Map<Self::D, F>
+        where
+            F: FnMut(Person) -> T,
+        {
             source.parents.into_iter().take(1).map(f)
         }
     }
