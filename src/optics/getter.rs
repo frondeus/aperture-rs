@@ -24,6 +24,37 @@ where
     }
 }
 
+impl<S, M, T> Getter<AsGetter, S> for M
+where
+    M: crate::method::Method<S, (), Output = T> + AffineFold<AsGetter, S>,
+{
+    type T = T;
+
+    fn view(&self, source: S) -> <Self as Getter<AsGetter, S>>::T {
+        self.mcall(source, ())
+    }
+}
+impl<S, M, T> AffineFold<AsGetter, S> for M
+where
+    M: crate::method::Method<S, (), Output = T> + Fold<AsGetter, S>,
+{
+    type T = T;
+
+    fn preview(&self, source: S) -> Option<<Self as AffineFold<AsGetter, S>>::T> {
+        Some(self.view(source))
+    }
+}
+impl<S, M, T> Fold<AsGetter, S> for M
+where
+    M: crate::method::Method<S, (), Output = T>,
+{
+    type D = std::option::IntoIter<T>;
+
+    fn fold(&self, source: S) -> Self::D {
+        self.preview(source).into_iter()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -62,19 +93,11 @@ mod tests {
         let moms_name = lens.view(Person::olivier());
         assert_eq!(&moms_name, "Anne");
     }
-    // #[test]
-    // fn as_affine_fold() {
-    //     let test = Test("Foo".into());
 
-    //     assert_eq!(
-    //         Test::own_.as_affine_fold().preview(test),
-    //         Some("Foo".to_string())
-    //     );
-
-    //     let test = Test("Foo".into());
-    //     assert_eq!(
-    //         Test::own_.as_affine_fold().fold(test).next(),
-    //         Some("Foo".to_string())
-    //     );
-    // }
+    #[test]
+    fn method() {
+        let lens = PersonMother.then(Person::name);
+        let moms_name = lens.view(Person::olivier());
+        assert_eq!(&moms_name, "Anne");
+    }
 }

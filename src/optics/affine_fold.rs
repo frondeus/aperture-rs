@@ -1,6 +1,6 @@
 use crate::prelude::*;
 
-pub struct AsAffineMethod;
+pub struct AsAffineFold;
 pub trait AffineFold<As, S>: Fold<As, S> {
     type T;
     fn preview(&self, source: S) -> Option<<Self as AffineFold<As, S>>::T>;

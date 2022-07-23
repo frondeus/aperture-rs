@@ -23,6 +23,14 @@ where
     }
 }
 
+// impl<S, M> Fold<AsFold, S> for M where M: crate::method::Method<S, ()> {
+//     type D;
+
+//     fn fold(&self, source: S) -> Self::D {
+//         todo!()
+//     }
+// }
+
 #[cfg(test)]
 mod tests {
     use super::*;

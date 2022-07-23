@@ -29,8 +29,8 @@ impl Person {
 }
 #[allow(dead_code)]
 impl Person {
-    pub fn name(&self) -> &String {
-        &self.name
+    pub fn name(self) -> String {
+        self.name
     }
     pub fn name_mut(&mut self) -> &mut String {
         &mut self.name
@@ -39,26 +39,8 @@ impl Person {
         self.name = name;
         self
     }
-    pub fn name_opt(&self) -> Option<&String> {
-        Some(&self.name)
-    }
-    pub fn mother(&self) -> &Person {
-        &self.parents[0]
-    }
-    pub fn mother_mut(&mut self) -> &mut Person {
-        &mut self.parents[0]
-    }
-    pub fn mother_opt(&self) -> Option<&Person> {
-        self.parents.get(0)
-    }
-    pub fn parents(&self) -> &Vec<Person> {
-        &self.parents
-    }
-    pub fn parents_mut(&mut self) -> &mut Vec<Person> {
-        &mut self.parents
-    }
-    pub fn parents_opt(&self) -> Option<&Vec<Person>> {
-        Some(&self.parents)
+    pub fn name_opt(self) -> Option<String> {
+        Some(self.name)
     }
 }
 

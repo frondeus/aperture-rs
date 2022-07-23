@@ -28,6 +28,26 @@ where
     }
 }
 
+// impl<S, M, T> Setter<AsSetter, S> for M
+// where
+//     M: for<'a> crate::method::Method<&'a mut S, (), Output = &'a mut T>,
+// {
+//     type O = T;
+
+//     type D = S;
+
+//     type T = T;
+
+//     fn set<F>(&self, mut source: S, f: F) -> Self::D
+//     where
+//         F: FnMut(Self::O) -> Self::T + Clone,
+//     {
+//         let mutable = self.mcall(&mut source, ());
+//         take_mut::take(mutable, f);
+//         source
+//     }
+// }
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -39,10 +59,18 @@ mod tests {
         prelude::*,
     };
 
+    // #[test]
+    // fn method() {
+    //     let lens = PersonMother.then(Person::name_mut);
+    //     let new_olivier = lens.set(Person::olivier(), |name| name.to_uppercase());
+
+    //     assert_eq!(new_olivier.parents[0].name, "ANNE");
+    // }
+
     #[test]
     fn combinator() {
         let lens: And<PersonMother, PersonName> = PersonMother.then(PersonName);
         let new_olivier = lens.set(Person::olivier(), |name| name.to_uppercase());
-        assert_eq!(new_olivier.mother().name, "ANNE");
+        assert_eq!(new_olivier.parents[0].name, "ANNE");
     }
 }
