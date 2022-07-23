@@ -173,6 +173,27 @@ pub struct Person {
 }
 
 impl Person {
+    pub fn olivier() -> Person {
+        Person {
+            age: 24,
+            name: "Olivier".into(),
+            parents: vec![
+                Person {
+                    age: 55,
+                    name: "Anne".to_string(),
+                    parents: vec![],
+                },
+                Person {
+                    age: 56,
+                    name: "Thierry".to_string(),
+                    parents: vec![],
+                },
+            ],
+        }
+    }
+}
+#[allow(dead_code)]
+impl Person {
     pub fn name(&self) -> &String {
         &self.name
     }
@@ -209,6 +230,7 @@ impl Person {
 pub struct Test(pub String);
 pub struct Arg;
 #[allow(unused_variables)]
+#[allow(dead_code)]
 impl Test {
     pub fn ref_(&self) -> &String {
         &self.0

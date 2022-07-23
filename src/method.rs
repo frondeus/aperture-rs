@@ -69,6 +69,6 @@ mod tests {
             parents: vec![],
         };
         // Person::name_mut.set(&mut olivier, |name| *name = "New Olivier".to_string());
-        let olivier = Person::set_name.mcall(olivier, ("New Olivier".to_string(),));
+        Person::set_name.mcall(olivier, ("New Olivier".to_string(),));
     }
 }

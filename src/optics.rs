@@ -16,7 +16,7 @@ mod traversal;
 pub use traversal::*;
 
 // 2nd degree
-mod affine_traversal; // known as optional type
+mod affine_traversal; // known as Optional
 pub use affine_traversal::*;
 
 mod getter;
@@ -35,4 +35,55 @@ pub use lens::*;
 // Combinators
 mod then;
 pub use then::*;
-mod then_impl;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        data::{
+            lenses::{PersonName, PersonParents},
+            Person,
+        },
+        optics::{Filtered, Fold},
+    };
+
+    #[test]
+    fn collections() {
+        let lens = PersonParents.then(Every);
+        let mut parents = lens.fold(Person::olivier());
+        assert_eq!(parents.next().unwrap().name, "Anne");
+        assert_eq!(parents.next().unwrap().name, "Thierry");
+        assert_eq!(parents.next(), None);
+    }
+
+    #[test]
+    fn long_collections() {
+        let lens = PersonParents.then(Every).then(PersonName);
+        let mut parents = lens.fold(Person::olivier());
+        assert_eq!(parents.next().unwrap(), "Anne");
+        assert_eq!(parents.next().unwrap(), "Thierry");
+        assert_eq!(parents.next(), None);
+
+        let lens = PersonParents
+            .then(Filtered(|person: &Person| person.age < 56))
+            .then(PersonName);
+        let mut parents = lens.fold(Person::olivier());
+        assert_eq!(parents.next().unwrap(), "Anne");
+        assert_eq!(parents.next(), None);
+
+        let lens = PersonParents
+            .then(Filtered(|person: &Person| person.age > 55))
+            .then(PersonName);
+        let mut parents = lens.fold(Person::olivier());
+        assert_eq!(parents.next().unwrap(), "Thierry");
+        assert_eq!(parents.next(), None);
+
+        let lens = PersonParents
+            .then(Filtered(|person: &Person| person.age > 55))
+            .then(PersonName);
+        let new_olivier = lens.set(Person::olivier(), |_t| "Mark".to_string());
+
+        assert_eq!(new_olivier.parents[0].name, "Anne");
+        assert_eq!(new_olivier.parents[1].name, "Mark");
+    }
+}

@@ -1,5 +1,4 @@
-use super::{AffineFold, Fold, Setter, Traversal};
-use crate::method::Method;
+use super::{AffineFold, And, Fold, Setter, Traversal};
 
 pub struct AsAffineTraversal;
 pub trait AffineTraversal<As, S>
@@ -12,6 +11,29 @@ where
         F: FnOnce(<Self::D as Iterator>::Item) -> T;
 }
 
+impl<A1, A2, L1, L2, S, Item> AffineTraversal<(A1, A2), S> for And<L1, L2>
+where
+    L1: Fold<A1, S>,
+    <L1 as Fold<A1, S>>::D: Iterator,
+    L2: Clone + Fold<A2, <<L1 as Fold<A1, S>>::D as Iterator>::Item>,
+    <L2 as Fold<A2, <<L1 as Fold<A1, S>>::D as Iterator>::Item>>::D: Iterator,
+    <L2 as Fold<A2, <L1 as AffineFold<A1, S>>::T>>::D: Iterator<Item = Item>,
+    L1: Traversal<A1, S>,
+    L2: Traversal<A2, <<L1 as Fold<A1, S>>::D as Iterator>::Item>,
+    L1: AffineFold<A1, S>,
+    L2: AffineFold<A2, L1::T> + Clone,
+    L1: AffineTraversal<A1, S>,
+    L2: AffineTraversal<A2, L1::T>,
+    Self: Fold<(A1, A2), S>,
+    Self::D: Iterator<Item = Item>,
+{
+    fn map_opt<T, F>(&self, source: S, f: F) -> Option<T>
+    where
+        F: FnOnce(<Self::D as Iterator>::Item) -> T,
+    {
+        self.0.preview(source).and_then(|t| self.1.map_opt(t, f))
+    }
+}
 // #[cfg(test)]
 // pub fn assert_affine_traversal<As, Optic, S, Out>(_o: Optic)
 // where
@@ -113,7 +135,7 @@ impl<O> Setter<AsAffineTraversal, Vec<O>> for At<usize> {
     where
         F: FnMut(Self::O) -> O,
     {
-        source.into_iter().collect()
+        source.into_iter().map(f).collect()
     }
 }
 impl<O> AffineFold<AsAffineTraversal, Vec<O>> for At<usize>
@@ -140,7 +162,13 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::identity::Identity;
+    use crate::{
+        data::{
+            lenses::{PersonMother, PersonName},
+            Person,
+        },
+        optics::Then,
+    };
 
     #[test]
     fn affine_traversal() {
@@ -197,5 +225,12 @@ mod tests {
         let mut iter = First.fold(vec);
         assert_eq!(iter.next(), Some(1));
         assert_eq!(iter.next(), None);
+    }
+
+    #[test]
+    fn as_aff_traversal() {
+        let lens = PersonMother.then(PersonName);
+        let mums_name = lens.map_opt(Person::olivier(), |name| name.to_uppercase());
+        assert_eq!(mums_name, Some("ANNE".to_string()));
     }
 }

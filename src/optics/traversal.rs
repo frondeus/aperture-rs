@@ -1,7 +1,4 @@
-use super::{Fold, Setter};
-use crate::method::Method;
-
-pub mod nested;
+use super::{And, Fold, Setter};
 
 pub struct AsTraversal;
 pub trait Traversal<As, S>
@@ -12,6 +9,23 @@ where
     fn traverse<F, T>(&self, source: S, f: F) -> std::iter::Map<Self::D, F>
     where
         F: FnMut(<Self::D as Iterator>::Item) -> T;
+}
+
+impl<A1, A2, L1, L2, S> Traversal<(A1, A2), S> for And<L1, L2>
+where
+    L1: Fold<A1, S>,
+    <L1 as Fold<A1, S>>::D: Iterator,
+    L2: Clone + Fold<A2, <<L1 as Fold<A1, S>>::D as Iterator>::Item>,
+    L2::D: Iterator,
+    L1: Traversal<A1, S>,
+    L2: Traversal<A2, <<L1 as Fold<A1, S>>::D as Iterator>::Item>,
+{
+    fn traverse<F, T>(&self, source: S, f: F) -> std::iter::Map<Self::D, F>
+    where
+        F: FnMut(<Self::D as Iterator>::Item) -> T,
+    {
+        self.fold(source).map(f)
+    }
 }
 
 #[derive(Clone)]
@@ -94,17 +108,7 @@ where
     where
         F: FnMut(T) -> T,
     {
-        // let _mut: &mut S = &mut source;
-        // _mut.into_iter().for_each(|x| {
-        //     *x = f(*x);
-        // });
-        // .map(|x| {
-        //     *x = f;
-        //     x
-        // });
-        // source
         source.into_iter().map(f).collect()
-        // todo!()
     }
 }
 
@@ -123,6 +127,13 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::{
+        data::{
+            lenses::{PersonMother, PersonName},
+            Person,
+        },
+        optics::Then,
+    };
 
     #[test]
     fn traversal() {
@@ -170,5 +181,13 @@ mod tests {
 
         let new = Filtered(|x: &u32| x % 2 == 0).set(test, |x| x + 1);
         assert_eq!(new, vec![1, 3, 3]);
+    }
+
+    #[test]
+    fn combinator() {
+        let lens = PersonMother.then(PersonName);
+        let mut iter = lens.traverse(Person::olivier(), |name| name.to_uppercase());
+        let mums_name = iter.next();
+        assert_eq!(mums_name, Some("ANNE".to_string()));
     }
 }

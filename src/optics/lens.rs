@@ -1,6 +1,6 @@
 // mod tuple;
 
-use super::{AffineFold, AffineTraversal, Fold, Getter, Setter, Traversal};
+use super::{AffineTraversal, Getter};
 
 pub struct AsLens;
 pub trait Lens<As, S>
@@ -25,10 +25,12 @@ mod tests {
     //     };
 
     use super::*;
-    use crate::data::{
-        lenses::{PersonMother, PersonParents},
-        Person,
-        Test,
+    use crate::{
+        data::{
+            lenses::{PersonMother, PersonParents},
+            Person,
+        },
+        optics::Setter,
     };
 
     fn olivier() -> Person {

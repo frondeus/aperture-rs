@@ -1,4 +1,4 @@
-use crate::method::Method;
+use super::And;
 
 pub struct AsSetterMethod;
 pub trait Setter<As, S> {
@@ -10,6 +10,23 @@ pub trait Setter<As, S> {
         F: FnMut(Self::O) -> Self::T + Clone;
 }
 
+impl<A1, A2, L1, L2, S, T> Setter<(A1, A2), S> for And<L1, L2>
+where
+    L1: Setter<A1, S, T = T, O = T, D = S>,
+    L2: Setter<A2, T, D = T>,
+{
+    type O = L2::O;
+    type T = L2::T;
+
+    type D = S;
+
+    fn set<F>(&self, source: S, f: F) -> Self::D
+    where
+        F: FnMut(Self::O) -> Self::T + Clone,
+    {
+        self.0.set(source, |o| self.1.set(o, f.clone()))
+    }
+}
 // impl<S, D, M, T> Setter<AsSetterMethod, S> for M
 // where
 //     M: Method<S, (T,), Output = D>,
@@ -31,36 +48,17 @@ pub trait Setter<As, S> {
 mod tests {
     use super::*;
     use crate::{
-        data::{Arg, Person, Test},
-        lazy::LazyExt,
+        data::{
+            lenses::{PersonMother, PersonName},
+            Person,
+        },
+        optics::Then,
     };
 
-    fn is_setter_a_method<M, In, S>(m: M)
-    where
-        M: Method<S, (In,), Output = S>,
-    {
-    }
-
     #[test]
-    fn set() {
-        let olivier = Person {
-            age: 24,
-            name: "Olivier".into(),
-            parents: vec![],
-        };
-
-        // is_setter_a_method(Person::set_name);
-        // let new = Person::set_name.set(olivier, |()| "new".to_string());
-        // assert_eq!(new.name, "new");
-        // assert_eq!(new.age, 24);
-
-        // let test = Test::mut_arg
-        //     .with_args((1,))
-        //     .set(test, |x| *x = "Bar".into());
-        // assert_eq!(test.0, "Bar");
-        // let test = Test::mut_complex
-        //     .lazy(|| (Arg,))
-        //     .set(test, |x| *x = "Bar".into());
-        // assert_eq!(test.0, "Bar");
+    fn combinator() {
+        let lens: And<PersonMother, PersonName> = PersonMother.then(PersonName);
+        let new_olivier = lens.set(Person::olivier(), |name| name.to_uppercase());
+        assert_eq!(new_olivier.mother().name, "ANNE");
     }
 }

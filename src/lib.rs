@@ -1,5 +1,7 @@
 // #![feature(unboxed_closures, fn_traits, type_alias_impl_trait)]
-#![allow(unused_imports)]
+// #![allow(unused_imports)]
+#![deny(clippy::all)]
+// #![deny(clippy::pedantic)]
 
 mod sealed {
     pub trait Sealed<S, A> {}
