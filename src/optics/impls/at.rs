@@ -1,6 +1,7 @@
 use crate::{optics::affine_traversal::AsAffineTraversal, prelude::*};
 
 pub struct At<Key>(Key);
+impl<O> Optics<AsAffineTraversal, Vec<O>> for At<usize> {}
 impl<O> Setter<AsAffineTraversal, Vec<O>> for At<usize> {
     type T = O;
     type O = O;

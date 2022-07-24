@@ -15,5 +15,7 @@ pub mod optics;
 mod data;
 
 pub mod prelude {
+    pub use lenses_derive::*;
+
     pub use crate::optics::prelude::*;
 }

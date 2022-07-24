@@ -1,3 +1,4 @@
+pub mod optics;
 // 0 degree - Basic blocks
 pub mod fold;
 pub mod review;
@@ -31,7 +32,8 @@ pub mod prelude {
         fold::Fold,
         getter::Getter,
         impls::*,
-        lens::Lens,
+        lens::{DerivedLens, Lens},
+        optics::Optics,
         review::Review,
         setter::Setter,
         then::{And, Then},

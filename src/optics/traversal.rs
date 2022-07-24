@@ -1,5 +1,6 @@
 use crate::prelude::*;
 
+#[derive(Debug, Default)]
 pub struct AsTraversal;
 pub trait Traversal<As, S>
 where

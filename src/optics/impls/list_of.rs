@@ -1,6 +1,8 @@
 use crate::{optics::fold::AsFold, prelude::*};
 
 pub struct ListOf;
+impl<S> Optics<AsFold, S> for ListOf {}
+
 impl<S> Fold<AsFold, S> for ListOf
 where
     S: IntoIterator,

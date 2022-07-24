@@ -1,6 +1,8 @@
 use crate::{optics::affine_traversal::AsAffineTraversal, prelude::*};
 
+#[derive(Default, Debug, Clone)]
 pub struct First;
+impl<S> Optics<AsAffineTraversal, S> for First {}
 impl<S> Fold<AsAffineTraversal, S> for First
 where
     S: IntoIterator,

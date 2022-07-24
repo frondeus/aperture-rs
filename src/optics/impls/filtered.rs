@@ -3,6 +3,7 @@ use crate::{optics::traversal::AsTraversal, prelude::*};
 #[derive(Clone)]
 pub struct Filtered<Filter>(pub Filter);
 
+impl<S, Filter> Optics<AsTraversal, S> for Filtered<Filter> {}
 impl<S, Filter> Fold<AsTraversal, S> for Filtered<Filter>
 where
     Filter: for<'a> FnMut(&'a S::Item) -> bool + Clone,

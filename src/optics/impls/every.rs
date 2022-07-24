@@ -3,6 +3,7 @@ use crate::{optics::traversal::AsTraversal, prelude::*};
 #[derive(Clone)]
 pub struct Every;
 
+impl<S> Optics<AsTraversal, S> for Every {}
 impl<S> Fold<AsTraversal, S> for Every
 where
     S: IntoIterator,

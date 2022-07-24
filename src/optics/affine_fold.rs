@@ -1,7 +1,11 @@
 use crate::prelude::*;
 
+#[derive(Debug, Default)]
 pub struct AsAffineFold;
-pub trait AffineFold<As, S>: Fold<As, S> {
+pub trait AffineFold<As, S>
+where
+    Self: Fold<As, S>,
+{
     type T;
     fn preview(&self, source: S) -> Option<<Self as AffineFold<As, S>>::T>;
 }
@@ -10,7 +14,7 @@ impl<A1, A2, L1, L2, S> AffineFold<(A1, A2), S> for And<L1, L2>
 where
     L1: Fold<A1, S>,
     L1::D: Iterator,
-    L2: Fold<A2, <<L1 as Fold<A1, S>>::D as Iterator>::Item> + Clone,
+    L2: Fold<A2, <<L1 as Fold<A1, S>>::D as Iterator>::Item>,
     <L2 as Fold<A2, <<L1 as Fold<A1, S>>::D as Iterator>::Item>>::D: Iterator,
 
     L1: AffineFold<A1, S>,

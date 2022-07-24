@@ -1,5 +1,6 @@
-use crate::prelude::And;
+use crate::prelude::{And, Optics};
 
+#[derive(Debug, Default)]
 pub struct AsFold;
 pub trait Fold<As, S> {
     type D;

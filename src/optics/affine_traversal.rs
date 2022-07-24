@@ -1,5 +1,6 @@
 use crate::prelude::*;
 
+#[derive(Debug, Default)]
 pub struct AsAffineTraversal;
 pub trait AffineTraversal<As, S>
 where

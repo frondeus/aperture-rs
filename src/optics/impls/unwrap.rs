@@ -1,6 +1,8 @@
 use crate::{optics::getter::AsGetter, prelude::*};
 
+#[derive(Default, Debug, Clone)]
 pub struct Unwrap;
+impl<T> Optics<AsGetter, Option<T>> for Unwrap {}
 impl<T> Getter<AsGetter, Option<T>> for Unwrap {
     type T = T;
 
