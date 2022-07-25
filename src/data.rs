@@ -26,6 +26,47 @@ impl Person {
             ],
         }
     }
+
+    pub fn wojtek() -> Person {
+        Person {
+            age: 27,
+            name: "Wojtek".into(),
+            parents: vec![
+                Person {
+                    age: 72,
+                    name: "Miroslawa".to_string(),
+                    parents: vec![
+                        Person {
+                            age: 93,
+                            name: "Lidia".to_string(),
+                            parents: vec![],
+                        },
+                        Person {
+                            age: 93,
+                            name: "Jerzy".to_string(),
+                            parents: vec![],
+                        },
+                    ],
+                },
+                Person {
+                    age: 72,
+                    name: "Zenon".to_string(),
+                    parents: vec![
+                        Person {
+                            age: 93,
+                            name: "Helena".to_string(),
+                            parents: vec![],
+                        },
+                        Person {
+                            age: 93,
+                            name: "Waclaw".to_string(),
+                            parents: vec![],
+                        },
+                    ],
+                },
+            ],
+        }
+    }
 }
 #[allow(dead_code)]
 impl Person {
