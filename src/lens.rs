@@ -9,21 +9,42 @@ pub trait Lens<As, S> {
     fn impl_view(&self, source: S) -> Self::View;
     fn impl_set<F: Clone + FnMut(Self::View) -> Self::View>(&self, source: S, f: F) -> S;
 }
+impl<S, X> Optics<AsLens, S> for X where X: Lens<AsLens, S> {}
 
-impl<As, X, S> Getter<(AsLens, As), S> for X
+impl<X, S> Getter<AsLens, S> for X
 where
-    X: Lens<As, S>,
+    X: Lens<AsLens, S>,
 {
     type T = X::View;
 
-    fn view(&self, source: S) -> <Self as Getter<(AsLens, As), S>>::T {
+    fn view(&self, source: S) -> <Self as Getter<AsLens, S>>::T {
         self.impl_view(source)
     }
 }
 
-impl<As, X, S> AffineTraversal<(AsLens, As), S> for X
+impl<X, S> AffineFold<AsLens, S> for X
 where
-    X: Lens<As, S>,
+    X: Getter<AsLens, S>,
+{
+    type T = X::T;
+
+    fn preview(&self, source: S) -> Option<Self::T> {
+        self.impl_preview(source)
+    }
+}
+impl<X, S> Fold<AsLens, S> for X
+where
+    X: AffineFold<AsLens, S>,
+{
+    type D = std::option::IntoIter<X::T>;
+
+    fn fold(&self, source: S) -> Self::D {
+        self.preview(source).into_iter()
+    }
+}
+impl<X, S> AffineTraversal<AsLens, S> for X
+where
+    X: Lens<AsLens, S>,
 {
     type O = X::View;
 
@@ -38,11 +59,47 @@ where
         Lens::impl_set(self, source, f)
     }
 }
-
-impl<L1, L2, S> Lens<AsLens, S> for And<L1, L2>
+impl<X, S> Traversal<AsLens, S> for X
 where
-    L1: Lens<AsLens, S>,
-    L2: Lens<AsLens, L1::View>,
+    X: AffineTraversal<AsLens, S>,
+{
+    type D = std::option::IntoIter<X::O>;
+
+    fn impl_fold(&self, source: S) -> Self::D {
+        self.impl_preview(source).into_iter()
+    }
+
+    fn impl_set<F>(&self, source: S, f: F) -> S
+    where
+        F: Clone + FnMut(<Self::D as Iterator>::Item) -> <Self::D as Iterator>::Item,
+    {
+        self.impl_set(source, f)
+    }
+}
+impl<X, S> Setter<AsLens, S> for X
+where
+    X: Traversal<AsLens, S>,
+{
+    type O = <X::D as Iterator>::Item;
+
+    type D = S;
+    type T = <X::D as Iterator>::Item;
+
+    fn set<F>(&self, source: S, f: F) -> Self::D
+    where
+        F: Clone + FnMut(Self::O) -> Self::T + Clone,
+    {
+        self.impl_set(source, f)
+    }
+}
+
+macro_rules! impl_and {
+ ($as: ident, $(($l:ident, $r:ident),)*) => { impl_and!(@ ($as, $as), $(($l, $r), ($r, $l),)*); };
+ (@ $(($l:ident, $r:ident),)*) => {$(
+impl<L1, L2, S> Lens<AsLens, S> for And<L1, L2, ($l, $r), (S, L1::View)>
+where
+    L1: Lens<$l, S>,
+    L2: Lens<$r, L1::View>,
 {
     type View = L2::View;
 
@@ -54,7 +111,13 @@ where
         self.0.set(source, |p| self.1.set(p, f.clone()))
     }
 }
+ )*};
+}
 
+impl_and!(
+    AsLens,
+    // (AsLens, AsIso),
+);
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -25,10 +25,10 @@ pub mod traversal;
 
 // 2nd degree
 pub mod affine_traversal; // known as Optional
-                          // pub mod getter;
+pub mod getter;
 
 // 3rd degree - Complex
-// pub mod lens;
+pub mod lens;
 
 // WIP
 // mod rev_lens;
@@ -49,10 +49,9 @@ pub mod prelude {
         affine_fold::*,
         affine_traversal::*,
         fold::*,
-        // getter::*,
+        getter::*,
         impls::*,
-        // lens::*,
-        // optics::*,
+        lens::*,
         // review::*,
         setter::*,
         then::*,

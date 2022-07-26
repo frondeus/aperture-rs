@@ -42,13 +42,13 @@ impl_fold!(
     (AsFold, AsTraversal),
     (AsFold, AsAffineFold),
     (AsFold, AsAffineTraversal),
-    // (AsFold, AsGetter),
-    // (AsFold, AsLens),
+    (AsFold, AsGetter),
+    (AsFold, AsLens),
     // (AsFold, AsRevPrism),
     // (AsFold, AsPrism),
     // (AsFold, AsIso)
     (AsTraversal, AsAffineFold),
-    // (AsTraversal, AsGetter),
+    (AsTraversal, AsGetter),
     // (AsTraversal, AsRevPrism),
 );
 

@@ -76,7 +76,7 @@ where
 impl_and!(
     AsTraversal,
     (AsTraversal, AsAffineTraversal),
-    // (AsTraversal, AsLens),
+    (AsTraversal, AsLens),
     // (AsTraversal, AsPrism),
     // (AsTraversal, AsIso),
 );

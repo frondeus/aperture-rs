@@ -103,7 +103,7 @@ where
 
 impl_and!(
     AsAffineTraversal,
-    // (AsAffineTraversal, AsLens),
+    (AsAffineTraversal, AsLens),
     // (AsAffineTraversal, AsPrism),
     // (AsAffineTraversal, AsIso),
     // (AsLens, AsPrism),

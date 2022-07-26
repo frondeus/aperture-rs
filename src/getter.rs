@@ -9,10 +9,11 @@ pub trait Getter<As, S> {
         Some(self.view(source))
     }
 }
+impl<S, X> Optics<AsGetter, S> for X where X: Getter<AsGetter, S> {}
 
-impl<As, X, S> AffineFold<(AsGetter, As), S> for X
+impl<X, S> AffineFold<AsGetter, S> for X
 where
-    X: Getter<As, S>,
+    X: Getter<AsGetter, S>,
 {
     type T = X::T;
 
@@ -20,6 +21,41 @@ where
         self.impl_preview(source)
     }
 }
+impl<X, S> Fold<AsGetter, S> for X
+where
+    X: AffineFold<AsGetter, S>,
+{
+    type D = std::option::IntoIter<X::T>;
+
+    fn fold(&self, source: S) -> Self::D {
+        self.preview(source).into_iter()
+    }
+}
+
+macro_rules! impl_and {
+ ($as: ident, $(($l:ident, $r:ident),)*) => { impl_and!(@ ($as, $as), $(($l, $r), ($r, $l),)*); };
+ (@ $(($l:ident, $r:ident),)*) => {$(
+impl<L1, L2, S> Getter<AsGetter, S> for And<L1, L2, ($l, $r), (S, L1::T)>
+where
+    L1: Getter<$l, S>,
+    L2: Getter<$r, L1::T>,
+{
+    type T = L2::T;
+
+    fn view(&self, source: S) -> <Self as Getter<AsGetter, S>>::T {
+        self.1.view(self.0.view(source))
+    }
+}
+ )*};
+}
+
+impl_and!(
+    AsGetter,
+    (AsGetter, AsLens),
+    // (AsGetter, AsRevPrism),
+    // (AsGetter, AsIso),
+    // (AsLens,   AsRevPrism),
+);
 
 // impl<A1, A2, L1, L2, S> Getter<(A1, A2), S> for And<L1, L2>
 // where

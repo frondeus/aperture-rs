@@ -40,9 +40,9 @@ impl_setter!(
     AsSetter,
     (AsSetter, AsTraversal),
     (AsSetter, AsAffineTraversal),
-    // ( AsSetter, AsLens )
-    // ( AsSetter, AsPrism )
-    // ( AsSetter, AsIso )
+    (AsSetter, AsLens),
+    // ( AsSetter, AsPrism ),
+    // ( AsSetter, AsIso ),
 );
 
 #[cfg(test)]

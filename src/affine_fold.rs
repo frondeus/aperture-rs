@@ -42,8 +42,8 @@ where
 impl_and!(
     AsAffineFold,
     (AsAffineFold, AsAffineTraversal),
-    // (AsAffineFold, AsGetter),
-    // (AsAffineFold, AsLens),
+    (AsAffineFold, AsGetter),
+    (AsAffineFold, AsLens),
     // (AsAffineFold, AsRevPrism),
     // (AsAffineFold, AsPrism),
     // (AsAffineFold, AsIso),
