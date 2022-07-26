@@ -11,61 +11,39 @@ pub trait Setter<As, S> {
 }
 
 impl<S, X> Optics<AsSetter, S> for X where X: Setter<AsSetter, S> {}
-impl<L1, L2, S, T> Setter<AsSetter, S> for And<L1, L2, (AsSetter, AsSetter), (S, T)>
-where
-    L1: Setter<AsSetter, S, T = T, D = S, O = T>,
-    L2: Setter<AsSetter, T, D = T>,
-{
-    type O = L2::O;
 
-    type D = S;
+macro_rules! impl_setter {
+    ($as: ident, $(($l:ident, $r:ident),)*) => { impl_setter!(@ ($as, $as), $(($l, $r), ($r, $l)),*); };
+    (@ $(($l:ident, $r:ident)),*) => {$(
+        impl<L1, L2, S, T> Setter<AsSetter, S> for And<L1, L2, ($l, $r), (S, T)>
+        where
+            L1: Setter<$l, S, T = T, D = S, O = T>,
+            L2: Setter<$r, T, D = T>,
+        {
+            type O = L2::O;
 
-    type T = L2::T;
+            type D = S;
 
-    fn set<F>(&self, source: S, f: F) -> Self::D
-    where
-        F: FnMut(Self::O) -> Self::T + Clone,
-    {
-        self.0.set(source, |o| self.1.set(o, f.clone()))
-    }
-}
-impl<L1, L2, S, T> Setter<AsSetter, S> for And<L1, L2, (AsSetter, AsTraversal), (S, T)>
-where
-    L1: Setter<AsSetter, S, T = T, D = S, O = T>,
-    L2: Setter<AsTraversal, T, D = T>,
-{
-    type O = L2::O;
+            type T = L2::T;
 
-    type D = S;
-
-    type T = L2::T;
-
-    fn set<F>(&self, source: S, f: F) -> Self::D
-    where
-        F: FnMut(Self::O) -> Self::T + Clone,
-    {
-        self.0.set(source, |o| self.1.set(o, f.clone()))
-    }
+            fn set<F>(&self, source: S, f: F) -> Self::D
+            where
+                F: FnMut(Self::O) -> Self::T + Clone,
+            {
+                self.0.set(source, |o| self.1.set(o, f.clone()))
+            }
+        }
+    )*};
 }
 
-impl<L1, L2, S, T> Setter<AsSetter, S> for And<L1, L2, (AsSetter, AsAffineTraversal), (S, T)>
-where
-    L1: Setter<AsSetter, S, T = T, D = S, O = T>,
-    L2: Setter<AsAffineTraversal, T, D = T>,
-{
-    type O = L2::O;
-
-    type D = S;
-
-    type T = L2::T;
-
-    fn set<F>(&self, source: S, f: F) -> Self::D
-    where
-        F: FnMut(Self::O) -> Self::T + Clone,
-    {
-        self.0.set(source, |o| self.1.set(o, f.clone()))
-    }
-}
+impl_setter!(
+    AsSetter,
+    (AsSetter, AsTraversal),
+    (AsSetter, AsAffineTraversal),
+    // ( AsSetter, AsLens )
+    // ( AsSetter, AsPrism )
+    // ( AsSetter, AsIso )
+);
 
 #[cfg(test)]
 mod tests {

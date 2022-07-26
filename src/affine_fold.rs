@@ -21,11 +21,14 @@ where
     }
 }
 
+macro_rules! impl_and {
+ ($as: ident, $(($l:ident, $r:ident),)*) => { impl_and!(@ ($as, $as), $(($l, $r), ($r, $l)),*); };
+ (@ $(($l:ident, $r:ident)),*) => {$(
 impl<L1, L2, S> AffineFold<AsAffineFold, S>
-    for And<L1, L2, (AsAffineFold, AsAffineFold), (S, L1::T)>
+    for And<L1, L2, ($l, $r), (S, L1::T)>
 where
-    L1: AffineFold<AsAffineFold, S>,
-    L2: AffineFold<AsAffineFold, L1::T>,
+    L1: AffineFold<$l, S>,
+    L2: AffineFold<$r, L1::T>,
 {
     type T = L2::T;
 
@@ -33,53 +36,18 @@ where
         self.0.preview(source).and_then(|t| self.1.preview(t))
     }
 }
-
-impl<L1, L2, S> Fold<AsFold, S> for And<L1, L2, (AsAffineFold, AsFold), (S, L1::T)>
-where
-    L1: AffineFold<AsAffineFold, S>,
-    L2: Fold<AsFold, L1::T>,
-    L2::D: Iterator,
-{
-    type D = std::iter::Flatten<std::option::IntoIter<L2::D>>;
-
-    fn fold(&self, source: S) -> Self::D {
-        self.0
-            .preview(source)
-            .map(|t| self.1.fold(t))
-            .into_iter()
-            .flatten()
-    }
+ )*};
 }
 
-impl<L1, L2, S> Fold<AsFold, S> for And<L1, L2, (AsAffineFold, AsTraversal), (S, L1::T)>
-where
-    L1: AffineFold<AsAffineFold, S>,
-    L2: Fold<AsTraversal, L1::T>,
-    L2::D: Iterator,
-{
-    type D = std::iter::Flatten<std::option::IntoIter<L2::D>>;
-
-    fn fold(&self, source: S) -> Self::D {
-        self.0
-            .preview(source)
-            .map(|t| self.1.fold(t))
-            .into_iter()
-            .flatten()
-    }
-}
-
-impl<L1, L2, S> AffineFold<AsAffineFold, S>
-    for And<L1, L2, (AsAffineFold, AsAffineTraversal), (S, L1::T)>
-where
-    L1: AffineFold<AsAffineFold, S>,
-    L2: AffineFold<AsAffineTraversal, L1::T>,
-{
-    type T = L2::T;
-
-    fn preview(&self, source: S) -> Option<Self::T> {
-        self.0.preview(source).and_then(|t| self.1.preview(t))
-    }
-}
+impl_and!(
+    AsAffineFold,
+    (AsAffineFold, AsAffineTraversal),
+    // (AsAffineFold, AsGetter),
+    // (AsAffineFold, AsLens),
+    // (AsAffineFold, AsRevPrism),
+    // (AsAffineFold, AsPrism),
+    // (AsAffineFold, AsIso),
+);
 
 #[cfg(test)]
 mod tests {
@@ -115,7 +83,7 @@ mod tests {
     fn af_and_fold() {
         let lens = PersonParentsAF.then(ListOf);
 
-        let mut parents = lens.fold(Person::wojtek());
+        let mut parents = Fold::fold(&lens, Person::wojtek());
         assert_eq!(parents.next().unwrap().name, "Miroslawa");
         assert_eq!(parents.next().unwrap().name, "Zenon");
     }

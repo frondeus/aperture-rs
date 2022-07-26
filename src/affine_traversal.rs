@@ -74,11 +74,14 @@ where
     }
 }
 
+macro_rules! impl_and {
+ ($as: ident, $(($l:ident, $r:ident),)*) => { impl_and!(@ ($as, $as), $(($l, $r), ($r, $l),)*); };
+ (@ $(($l:ident, $r:ident),)*) => {$(
 impl<L1, L2, S> AffineTraversal<AsAffineTraversal, S>
-    for And<L1, L2, (AsAffineTraversal, AsAffineTraversal), (S, L1::O)>
+    for And<L1, L2, ($l, $r), (S, L1::O)>
 where
-    L1: AffineTraversal<AsAffineTraversal, S>,
-    L2: AffineTraversal<AsAffineTraversal, L1::O>,
+    L1: AffineTraversal<$l, S>,
+    L2: AffineTraversal<$r, L1::O>,
 {
     type O = L2::O;
 
@@ -95,74 +98,16 @@ where
         self.0.set(source, |x| self.1.set(x, f.clone()))
     }
 }
-
-impl<L1, L2, S, T> Setter<AsSetter, S> for And<L1, L2, (AsAffineTraversal, AsSetter), (S, L1::O)>
-where
-    L1: Setter<AsAffineTraversal, S, T = T, D = S, O = T>,
-    L2: Setter<AsSetter, T, D = T>,
-{
-    type O = L2::O;
-
-    type D = S;
-
-    type T = L2::T;
-
-    fn set<F>(&self, source: S, f: F) -> Self::D
-    where
-        F: FnMut(Self::O) -> Self::T + Clone,
-    {
-        self.0.set(source, |o| self.1.set(o, f.clone()))
-    }
+ )*};
 }
 
-impl<L1, L2, S> Fold<AsFold, S>
-    for And<L1, L2, (AsAffineTraversal, AsFold), (S, <L1::D as Iterator>::Item)>
-where
-    L1: Fold<AsAffineTraversal, S>,
-    L1::D: Iterator,
-    L2: Fold<AsFold, <L1::D as Iterator>::Item>,
-    L2: Clone,
-    L2::D: Iterator,
-{
-    type D = NestedFold<AsFold, L1::D, L2>;
-
-    fn fold(&self, source: S) -> Self::D {
-        NestedFold::new(self.0.fold(source), self.1.clone())
-    }
-}
-
-impl<L1, L2, S> Traversal<AsTraversal, S>
-    for And<L1, L2, (AsAffineTraversal, AsTraversal), (S, <L1::D as Iterator>::Item)>
-where
-    L1: Traversal<AsAffineTraversal, S>,
-    L2: Clone + Traversal<AsTraversal, <L1::D as Iterator>::Item>,
-{
-    type D = crate::traversal::NestedTraversal<AsTraversal, L1::D, L2>;
-
-    fn impl_fold(&self, source: S) -> Self::D {
-        crate::traversal::NestedTraversal::new(self.0.impl_fold(source), self.1.clone())
-    }
-
-    fn impl_set<F>(&self, source: S, f: F) -> S
-    where
-        F: Clone + FnMut(<Self::D as Iterator>::Item) -> <Self::D as Iterator>::Item,
-    {
-        self.0.impl_set(source, |x| self.1.set(x, f.clone()))
-    }
-}
-
-impl<L1, L2, S> AffineFold<AsAffineFold, S>
-    for And<L1, L2, (AsAffineTraversal, AsAffineFold), (S, L1::T)>
-where
-    L1: AffineFold<AsAffineTraversal, S>,
-    L2: AffineFold<AsAffineFold, L1::T>,
-{
-    type T = L2::T;
-
-    fn preview(&self, source: S) -> Option<Self::T> {
-        self.0.preview(source).and_then(|t| self.1.preview(t))
-    }
-}
+impl_and!(
+    AsAffineTraversal,
+    // (AsAffineTraversal, AsLens),
+    // (AsAffineTraversal, AsPrism),
+    // (AsAffineTraversal, AsIso),
+    // (AsLens, AsPrism),
+);
 
 #[cfg(test)]
 mod tests {

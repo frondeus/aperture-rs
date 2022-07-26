@@ -1,5 +1,6 @@
 use crate::prelude::*;
 
+#[derive(Clone)]
 pub struct ListOf;
 
 impl<S> Fold<AsFold, S> for ListOf
