@@ -24,8 +24,8 @@ pub mod affine_fold;
 pub mod traversal;
 
 // 2nd degree
-// pub mod affine_traversal; // known as Optional
-// pub mod getter;
+pub mod affine_traversal; // known as Optional
+                          // pub mod getter;
 
 // 3rd degree - Complex
 // pub mod lens;
@@ -47,7 +47,7 @@ pub mod prelude {
 
     pub use crate::{
         affine_fold::*,
-        // affine_traversal::*,
+        affine_traversal::*,
         fold::*,
         // getter::*,
         impls::*,

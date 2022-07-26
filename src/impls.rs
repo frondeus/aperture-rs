@@ -13,8 +13,10 @@ pub mod filtered;
 #[cfg(test)]
 pub mod person_af;
 // AFFINE TRAVERSALS
-// pub mod at;
-// pub mod first;
+pub mod at;
+pub mod first;
+#[cfg(test)]
+pub mod person_at;
 // // GETTERS
 // pub mod unwrap;
 // // LENSES

@@ -10,9 +10,9 @@ pub trait AffineFold<As, S> // where
 }
 
 impl<S, X> Optics<AsAffineFold, S> for X where X: AffineFold<AsAffineFold, S> {}
-impl<As, X, S> Fold<(AsAffineFold, As), S> for X
+impl<X, S> Fold<AsAffineFold, S> for X
 where
-    X: AffineFold<As, S>,
+    X: AffineFold<AsAffineFold, S>,
 {
     type D = std::option::IntoIter<X::T>;
 
@@ -51,6 +51,19 @@ where
     }
 }
 
+impl<L1, L2, S> AffineFold<AsAffineFold, S>
+    for And<L1, L2, (AsAffineFold, AsAffineTraversal), (S, L1::T)>
+where
+    L1: AffineFold<AsAffineFold, S>,
+    L2: AffineFold<AsAffineTraversal, L1::T>,
+{
+    type T = L2::T;
+
+    fn preview(&self, source: S) -> Option<Self::T> {
+        self.0.preview(source).and_then(|t| self.1.preview(t))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -60,6 +73,7 @@ mod tests {
             every::Every,
             list_of::ListOf,
             person_af::{PersonMotherAF, PersonParentsAF},
+            person_at::PersonMotherAT,
             person_setters::PersonNameSetter,
         },
     };
@@ -95,6 +109,14 @@ mod tests {
         let mut parents = lens.fold(Person::wojtek());
         assert_eq!(parents.next().unwrap().name, "Miroslawa");
         assert_eq!(parents.next().unwrap().name, "Zenon");
+    }
+
+    #[test]
+    fn af_and_at() {
+        let lens = PersonMotherAF.then(PersonMotherAT);
+
+        let grandma = lens.preview(Person::wojtek());
+        assert_eq!(grandma.unwrap().name, "Lidia");
     }
 
     // #[test]

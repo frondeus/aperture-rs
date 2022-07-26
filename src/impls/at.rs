@@ -1,4 +1,4 @@
-use crate::{optics::affine_traversal::AsAffineTraversal, prelude::*};
+use crate::prelude::*;
 
 pub struct At<Key>(Key);
 impl<O> AffineTraversal<AsAffineTraversal, Vec<O>> for At<usize> {

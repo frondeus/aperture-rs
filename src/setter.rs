@@ -48,6 +48,25 @@ where
     }
 }
 
+impl<L1, L2, S, T> Setter<AsSetter, S> for And<L1, L2, (AsSetter, AsAffineTraversal), (S, T)>
+where
+    L1: Setter<AsSetter, S, T = T, D = S, O = T>,
+    L2: Setter<AsAffineTraversal, T, D = T>,
+{
+    type O = L2::O;
+
+    type D = S;
+
+    type T = L2::T;
+
+    fn set<F>(&self, source: S, f: F) -> Self::D
+    where
+        F: FnMut(Self::O) -> Self::T + Clone,
+    {
+        self.0.set(source, |o| self.1.set(o, f.clone()))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -55,6 +74,8 @@ mod tests {
         data::Person,
         prelude::{
             every::Every,
+            person_af::PersonMotherAF,
+            person_at::PersonMotherAT,
             person_setters::{PersonMotherSetter, PersonNameSetter, PersonParentsSetter},
         },
     };
@@ -89,4 +110,22 @@ mod tests {
         assert_eq!(&new.parents[0].name, "ANNE");
         assert_eq!(&new.parents[1].name, "THIERRY");
     }
+
+    #[test]
+    fn setter_and_at() {
+        let lens = PersonMotherSetter.then(PersonMotherAT);
+
+        let new = lens.set(Person::wojtek(), |mut parent| {
+            parent.name = parent.name.to_uppercase();
+            parent
+        });
+
+        assert_eq!(&new.parents[0].name, "Miroslawa");
+        assert_eq!(&new.parents[0].parents[0].name, "LIDIA");
+        assert_eq!(&new.parents[0].parents[1].name, "Jerzy");
+        assert_eq!(&new.parents[1].name, "Zenon");
+    }
+
+    // #[test]
+    // fn setter_and_af() {
 }
