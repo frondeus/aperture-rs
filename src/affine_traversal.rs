@@ -104,9 +104,9 @@ where
 impl_and!(
     AsAffineTraversal,
     (AsAffineTraversal, AsLens),
-    // (AsAffineTraversal, AsPrism),
+    (AsAffineTraversal, AsPrism),
     // (AsAffineTraversal, AsIso),
-    // (AsLens, AsPrism),
+    (AsLens, AsPrism),
 );
 
 #[cfg(test)]

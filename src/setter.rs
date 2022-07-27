@@ -41,7 +41,7 @@ impl_setter!(
     (AsSetter, AsTraversal),
     (AsSetter, AsAffineTraversal),
     (AsSetter, AsLens),
-    // ( AsSetter, AsPrism ),
+    (AsSetter, AsPrism),
     // ( AsSetter, AsIso ),
 );
 

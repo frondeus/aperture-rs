@@ -138,6 +138,18 @@ mod tests {
     }
 
     #[test]
+    fn and_is_valid_lens() {
+        let lens = PersonMother.then(PersonMother).then(PersonName);
+
+        let name = lens.view(Person::wojtek());
+        assert_eq!(name, "Lidia");
+
+        let wojtek = lens.set(Person::wojtek(), |name| name.to_uppercase());
+        assert_eq!(wojtek.parents[0].name, "Miroslawa");
+        assert_eq!(wojtek.parents[0].parents[0].name, "LIDIA");
+    }
+
+    #[test]
     fn as_getter() {
         let mom = PersonMother.view(Person::olivier());
         assert_eq!(&mom.name, "Anne");

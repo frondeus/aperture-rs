@@ -77,7 +77,7 @@ impl_and!(
     AsTraversal,
     (AsTraversal, AsAffineTraversal),
     (AsTraversal, AsLens),
-    // (AsTraversal, AsPrism),
+    (AsTraversal, AsPrism),
     // (AsTraversal, AsIso),
 );
 

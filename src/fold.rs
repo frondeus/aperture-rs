@@ -45,7 +45,7 @@ impl_fold!(
     (AsFold, AsGetter),
     (AsFold, AsLens),
     // (AsFold, AsRevPrism),
-    // (AsFold, AsPrism),
+    (AsFold, AsPrism),
     // (AsFold, AsIso)
     (AsTraversal, AsAffineFold),
     (AsTraversal, AsGetter),

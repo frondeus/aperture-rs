@@ -22,3 +22,7 @@ pub mod unwrap;
 // LENSES
 #[cfg(test)]
 pub mod person_lenses;
+// REVIEWS
+pub mod some_review;
+// PRISMS
+pub mod some;

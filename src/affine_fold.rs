@@ -44,8 +44,12 @@ impl_and!(
     (AsAffineFold, AsAffineTraversal),
     (AsAffineFold, AsGetter),
     (AsAffineFold, AsLens),
+    (AsAffineTraversal, AsGetter),
+    // (AsAffineTraversal, AsRevPrism),
+    // (AsGetter, AsRevPrism),
+    // (AsRevPrism, AsPrism),
     // (AsAffineFold, AsRevPrism),
-    // (AsAffineFold, AsPrism),
+    (AsAffineFold, AsPrism),
     // (AsAffineFold, AsIso),
 );
 

@@ -15,28 +15,28 @@ mod data;
 
 pub trait Optics<As, S> {}
 // 0 degree - Basic blocks
-pub mod fold;
-pub mod setter;
-// pub mod review;
+pub mod fold; // 23 = 1 + 11 * 2
+pub mod setter; // 11 = 1 + 5 * 2
 
 // 1st degree
-pub mod affine_fold;
-pub mod traversal;
+pub mod affine_fold; // 21 = 1 + 10 * 2
+pub mod traversal; // 9 = 1 + 4 * 2
 
 // 2nd degree
-pub mod affine_traversal; // known as Optional
-pub mod getter;
+pub mod affine_traversal; // known as Optional 9 = 1 + 4 * 2
+pub mod getter; // 9 = 1 + 4 * 2
+pub mod review; // 9 = 1 + 4 * 2
 
 // 3rd degree - Complex
-pub mod lens;
+pub mod lens; // 3 = 1 + 1 * 2
 
 // WIP
-// mod rev_lens;
-// mod prism;
-// mod rev_prism;
+mod prism; // 3
+           // mod rev_lens; // 3
+           // mod rev_prism; // 3
 
 // 4th degree
-// mod iso;
+// mod iso; // 1
 
 // Combinators
 pub mod impls;
@@ -52,7 +52,8 @@ pub mod prelude {
         getter::*,
         impls::*,
         lens::*,
-        // review::*,
+        prism::*,
+        review::*,
         setter::*,
         then::*,
         traversal::*,
@@ -62,7 +63,24 @@ pub mod prelude {
 
 #[cfg(test)]
 mod tests {
+    use crate::{
+        data::Person,
+        prelude::{
+            every::Every,
+            person_lenses::{PersonName, PersonParents},
+            Then,
+        },
+        setter::Setter,
+    };
 
+    #[test]
+    fn example() {
+        let telescope = PersonParents.then(Every).then(PersonName);
+
+        let wojtek = telescope.set(Person::wojtek(), |x| x.to_uppercase());
+        assert_eq!(wojtek.parents[0].name, "MIROSLAWA");
+        assert_eq!(wojtek.parents[1].name, "ZENON");
+    }
     //     use crate::{
     //         data::{
     //             lenses::{PersonName, PersonParents},

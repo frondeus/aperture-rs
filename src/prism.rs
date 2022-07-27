@@ -1,104 +1,136 @@
-use super::{AffineFoldLike, ReviewLike, SetLike};
+use crate::prelude::*;
 
-pub trait PrismLike<'a, S, TM>: ReviewLike<'a, S> + AffineFoldLike<'a, S, TM> {}
-
-impl<'a, S, TM, P> PrismLike<'a, S, TM> for P where P: ReviewLike<'a, S> + AffineFoldLike<'a, S, TM> {}
-
-pub struct IsPrism;
-
-pub struct At<T>(pub T);
-
-impl<'a, S> ReviewLike<'a, Vec<S>> for At<usize>
-where
-    S: 'a,
-{
-    type T = S;
-
-    fn review(&self, mut source: Vec<S>) -> Self::T {
-        source.swap_remove(self.0)
-    }
-}
-
-// impl<'a, S> AffineFoldLike<'a, Vec<S>, IsPrism> for At<usize>
-// where
-//     S: 'a,
-// {
-//     type T = S;
-
-//     fn preview(&self, source: &'a Vec<S>) -> Option<&'a Self::T> {
-//         source.get(self.0)
-//     }
-// }
-
-impl<'a, S, SM> SetLike<'a, Vec<S>, SM> for At<usize>
-where
-    S: 'a,
-{
-    type T = S;
-
-    fn set<F>(&self, source: &'a mut Vec<S>, f: F)
+pub struct AsPrism;
+pub trait Prism<As, S> {
+    type Variant;
+    fn impl_preview(&self, source: S) -> Option<Self::Variant>;
+    fn impl_review(&self, variant: Self::Variant) -> S;
+    fn impl_set<F>(&self, source: S, f: F) -> S
     where
-        F: FnOnce(&'a mut Self::T),
-    {
-        if let Some(t) = source.get_mut(self.0) {
-            f(t)
-        }
+        F: Clone + FnMut(Self::Variant) -> Self::Variant;
+}
+
+impl<S, X> Optics<AsPrism, S> for X where X: Prism<AsPrism, S> {}
+
+impl<X, S> Review<AsPrism, S> for X
+where
+    X: Prism<AsPrism, S>,
+{
+    type T = X::Variant;
+
+    fn review(&self, t: Self::T) -> S {
+        self.impl_review(t)
     }
 }
 
-pub trait PrismVecExt<T> {
-    fn at(index: usize) -> At<usize>;
-}
+impl<X, S> AffineTraversal<AsPrism, S> for X
+where
+    X: Prism<AsPrism, S>,
+{
+    type O = X::Variant;
 
-impl<T> PrismVecExt<T> for Vec<T> {
-    fn at(index: usize) -> At<usize> {
-        At(index)
+    fn impl_preview(&self, source: S) -> Option<Self::O> {
+        Prism::impl_preview(self, source)
     }
-}
 
-#[cfg(test)]
-mod tests {
-    use crate::{
-        data::Person,
-        optics::{LensLike, Then},
-    };
-
-    use super::*;
-
-    fn is_lens<'a, L: LensLike<'a, S, G, M>, S, G, M>(_l: L) {}
-    fn is_person_prism<'a, P>(_p: P)
+    fn impl_set<F>(&self, source: S, f: F) -> S
     where
-        P: PrismLike<'a, Vec<Person>, IsPrism>,
+        F: Clone + FnMut(Self::O) -> Self::O,
     {
-    }
-
-    #[test]
-    fn at() {
-        let mut olivier = Person {
-            age: 24,
-            name: "Olivier".into(),
-            parents: vec![
-                Person {
-                    age: 55,
-                    name: "Anne".to_string(),
-                    parents: vec![],
-                },
-                Person {
-                    age: 56,
-                    name: "Thierry".to_string(),
-                    parents: vec![],
-                },
-            ],
-        };
-
-        let parents_lens = (Person::parents, Person::parents_mut, Person::parents_opt);
-        let name_lens = (Person::name, Person::name_mut, Person::name_opt);
-
-        is_lens(parents_lens);
-        is_person_prism(At(0));
-        let res = parents_lens.then(At(0));
-        // let mothers_name = parents_lens.then(Vec::<Person>::at(0)).then(name_lens);
-
-        // assert_eq!(mothers_name.preview(&olivier).unwrap(), "Anne");
+        // let inner = self.impl_preview(source).map(f);
+        // self.impl_review(inner)
+        Prism::impl_set(self, source, f)
     }
 }
+
+impl<X, S> AffineFold<AsPrism, S> for X
+where
+    X: AffineTraversal<AsPrism, S>,
+{
+    type T = X::O;
+
+    fn preview(&self, source: S) -> Option<Self::T> {
+        self.impl_preview(source)
+    }
+}
+
+impl<X, S> Fold<AsPrism, S> for X
+where
+    X: AffineFold<AsPrism, S>,
+{
+    type D = std::option::IntoIter<X::T>;
+
+    fn fold(&self, source: S) -> Self::D {
+        self.preview(source).into_iter()
+    }
+}
+
+impl<X, S> Traversal<AsPrism, S> for X
+where
+    X: AffineTraversal<AsPrism, S>,
+{
+    type D = std::option::IntoIter<X::O>;
+
+    fn impl_fold(&self, source: S) -> Self::D {
+        self.impl_preview(source).into_iter()
+    }
+
+    fn impl_set<F>(&self, source: S, f: F) -> S
+    where
+        F: Clone + FnMut(<Self::D as Iterator>::Item) -> <Self::D as Iterator>::Item,
+    {
+        self.impl_set(source, f)
+    }
+}
+
+impl<X, S> Setter<AsPrism, S> for X
+where
+    X: Traversal<AsPrism, S>,
+{
+    type O = <X::D as Iterator>::Item;
+
+    type D = S;
+    type T = <X::D as Iterator>::Item;
+
+    fn set<F>(&self, source: S, f: F) -> Self::D
+    where
+        F: Clone + FnMut(Self::O) -> Self::T + Clone,
+    {
+        self.impl_set(source, f)
+    }
+}
+
+macro_rules! impl_and {
+ ($as: ident, $(($l:ident, $r:ident),)*) => { impl_and!(@ ($as, $as), $(($l, $r), ($r, $l),)*); };
+ (@ $(($l:ident, $r:ident),)*) => {$(
+impl <L1, L2, S> Prism<AsPrism, S> for And<L1, L2, ($l, $r), (S, L1::Variant)>
+where
+L1: Prism<$l, S>,
+L2: Prism<$r, L1::Variant> {
+    type Variant = L2::Variant;
+
+    fn impl_preview(&self, source: S) -> Option<Self::Variant> {
+        self.0
+            .impl_preview(source)
+            .and_then(|x| self.1.impl_preview(x))
+    }
+
+    fn impl_review(&self, variant: Self::Variant) -> S {
+        self.0.impl_review(self.1.impl_review(variant))
+    }
+
+    fn impl_set<F>(&self, source: S, f: F) -> S
+    where
+        F: Clone + FnMut(Self::Variant) -> Self::Variant,
+    {
+        self.0.impl_set(source, |x| self.1.impl_set(x, f.clone()))
+    }
+}
+
+ )*};
+}
+
+impl_and!(
+    AsPrism,
+    // (AsPrism, AsIso),
+);

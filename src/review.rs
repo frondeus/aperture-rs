@@ -1,19 +1,54 @@
 // use crate::method::Method;
 
+use crate::prelude::*;
+
 #[derive(Debug, Default)]
 pub struct AsReview;
 pub trait Review<As, S> {
     type T;
     fn review(&self, t: Self::T) -> S;
 }
+impl<S, X> Optics<AsReview, S> for X where X: Review<AsReview, S> {}
+
+macro_rules! impl_and {
+ ($as: ident, $(($l:ident, $r:ident),)*) => { impl_and!(@ ($as, $as), $(($l, $r), ($r, $l),)*); };
+ (@ $(($l:ident, $r:ident),)*) => {$(
+impl<L1, L2, S, S2> Review<AsReview, S2> for And<L1, L2, ($l, $r), (S, S2)>
+where
+    L1: Review<$l, S>,
+    L2: Review<$r, S2, T = S>,
+{
+    type T = L1::T;
+
+    fn review(&self, t: Self::T) -> S2 {
+        self.1.review(self.0.review(t))
+    }
+}
+ )*};
+}
+
+impl_and!(
+    AsReview,
+    // (AsReview, AsRevLens),
+    (AsReview, AsPrism),
+    // (AsReview, AsIso),
+    // (AsRevLens, Prism),
+);
 
 #[cfg(test)]
 mod tests {
-    // use super::*;
+    use super::*;
+    use crate::prelude::some_review::SomeR;
     // use crate::{
     //     data::{Arg, Test},
     //     lazy::LazyExt,
     // };
+    #[test]
+    fn review_and_review() {
+        let lens = SomeR.then(SomeR);
+        let res = lens.review(5);
+        assert_eq!(res, Option::Some(Option::Some(5)));
+    }
 
     // #[test]
     // fn review() {
