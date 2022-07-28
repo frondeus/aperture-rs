@@ -1,22 +1,20 @@
-use crate::{data::Person, prelude::*};
+// #[derive(Clone)]
+// pub struct PersonName;
 
-#[derive(Clone)]
-pub struct PersonName;
+// impl Lens<AsLens, Person> for PersonName {
+//     type View = String;
 
-impl Lens<AsLens, Person> for PersonName {
-    type View = String;
+//     fn impl_view(&self, source: Person) -> Self::View {
+//         source.name
+//     }
 
-    fn impl_view(&self, source: Person) -> Self::View {
-        source.name
-    }
+//     fn impl_set<F: FnMut(String) -> String>(&self, mut source: Person, mut f: F) -> Person {
+//         source.name = f(source.name);
+//         source
+//     }
+// }
 
-    fn impl_set<F: FnMut(String) -> String>(&self, mut source: Person, mut f: F) -> Person {
-        source.name = f(source.name);
-        source
-    }
-}
-
-// pub type PersonMother2 = And<And<PersonParents, first::First>, unwrap::Unwrap>;
+// // pub type PersonMother2 = And<And<PersonParents, first::First>, unwrap::Unwrap>;
 
 pub struct PersonMother;
 impl Lens<AsLens, Person> for PersonMother {
@@ -35,18 +33,41 @@ impl Lens<AsLens, Person> for PersonMother {
     }
 }
 
-#[derive(Default, Debug)]
-pub struct PersonParents;
+// #[derive(Default, Debug)]
+// pub struct PersonParents;
 
-impl Lens<AsLens, Person> for PersonParents {
-    type View = Vec<Person>;
+// impl Lens<AsLens, Person> for PersonParents {
+//     type View = Vec<Person>;
 
-    fn impl_view(&self, source: Person) -> Self::View {
-        source.parents
-    }
+//     fn impl_view(&self, source: Person) -> Self::View {
+//         source.parents
+//     }
 
-    fn impl_set<F: FnMut(Self::View) -> Self::View>(&self, mut source: Person, mut f: F) -> Person {
-        source.parents = f(source.parents);
-        source
-    }
+//     fn impl_set<F: FnMut(Self::View) -> Self::View>(&self, mut source: Person, mut f: F) -> Person {
+//         source.parents = f(source.parents);
+//         source
+//     }
+// }
+use crate::{
+    data::{Person, *},
+    prelude::*,
+};
+pub type PersonName = PersonNameLens;
+pub type PersonParents = PersonParentsLens;
+
+#[allow(non_upper_case_globals)]
+impl Person {
+    pub const mother: PersonMother = PersonMother;
+    // pub const name: PersonName = PersonNameLens;
+    // pub const parents: PersonParents = PersonParentsLens;
 }
+
+pub trait PersonLensesExt<S>: Lens<AsLens, S> + Sized {
+    fn then_mother(self) -> And<Self, PersonMother, (AsLens, AsLens), (S, Person)> {
+        self.then(PersonMother)
+    }
+    // fn then_name(self) -> And<Self, PersonName, (AsLens, AsLens), (S, Person)> {
+    //     self.then(PersonNameLens)
+    // }
+}
+impl<L, S> PersonLensesExt<S> for L where L: Lens<AsLens, S, View = Person> {}

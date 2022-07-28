@@ -52,7 +52,6 @@ mod tests {
         data::Person,
         prelude::{
             every::Every,
-            person_af::PersonMotherAF,
             person_at::PersonMotherAT,
             person_setters::{PersonMotherSetter, PersonNameSetter, PersonParentsSetter},
         },

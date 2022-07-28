@@ -5,6 +5,7 @@ pub trait Getter<As, S> {
     type T;
     fn view(&self, source: S) -> <Self as Getter<As, S>>::T;
 
+    #[doc(hidden)]
     fn impl_preview(&self, source: S) -> Option<Self::T> {
         Some(self.view(source))
     }

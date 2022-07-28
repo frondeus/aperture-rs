@@ -6,9 +6,12 @@ use crate::prelude::*;
 pub struct AsLens;
 pub trait Lens<As, S> {
     type View;
+    #[doc(hidden)]
     fn impl_view(&self, source: S) -> Self::View;
+    #[doc(hidden)]
     fn impl_set<F: Clone + FnMut(Self::View) -> Self::View>(&self, source: S, f: F) -> S;
 }
+
 impl<S, X> Optics<AsLens, S> for X where X: Lens<AsLens, S> {}
 
 impl<X, S> Getter<AsLens, S> for X
@@ -118,17 +121,25 @@ impl_and!(
     AsLens,
     // (AsLens, AsIso),
 );
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::{
-        data::Person,
-        prelude::person_lenses::{PersonMother, PersonName, PersonParents},
+        data::{Person, PersonLensesExt as _},
+        prelude::person_lenses::PersonLensesExt,
     };
 
     #[test]
+    fn derived() {
+        let age = Person::mother.then_age().view(Person::olivier());
+        assert_eq!(age, 55);
+    }
+
+    #[test]
     fn lens_and_lens() {
-        let lens = PersonMother.then(PersonName);
+        // let lens = Person::mother.then(Person::name);
+        let lens = Person::mother.then_name();
 
         let name = lens.view(Person::olivier());
         assert_eq!(name, "Anne");
@@ -139,7 +150,7 @@ mod tests {
 
     #[test]
     fn and_is_valid_lens() {
-        let lens = PersonMother.then(PersonMother).then(PersonName);
+        let lens = Person::mother.then_mother().then_name();
 
         let name = lens.view(Person::wojtek());
         assert_eq!(name, "Lidia");
@@ -151,20 +162,20 @@ mod tests {
 
     #[test]
     fn as_getter() {
-        let mom = PersonMother.view(Person::olivier());
+        let mom = Person::mother.view(Person::olivier());
         assert_eq!(&mom.name, "Anne");
 
-        let parents = PersonParents.view(Person::olivier());
+        let parents = Person::parents.view(Person::olivier());
         assert_eq!(parents[0].name, "Anne");
         assert_eq!(parents[1].name, "Thierry");
     }
 
     #[test]
     fn as_affine_fold() {
-        let mom: Option<Person> = PersonMother.preview(Person::olivier());
+        let mom: Option<Person> = Person::mother.preview(Person::olivier());
         assert_eq!(mom.unwrap().name, "Anne");
 
-        let parents = PersonParents.preview(Person::olivier());
+        let parents = Person::parents.preview(Person::olivier());
         let parents = parents.unwrap();
         assert_eq!(parents[0].name, "Anne");
         assert_eq!(parents[1].name, "Thierry");
@@ -172,10 +183,10 @@ mod tests {
 
     #[test]
     fn as_fold() {
-        let mut mom = PersonMother.fold(Person::olivier());
+        let mut mom = Person::mother.fold(Person::olivier());
         assert_eq!(mom.next().unwrap().name, "Anne");
 
-        let mut parents = PersonParents.fold(Person::olivier());
+        let mut parents = Person::parents.fold(Person::olivier());
         let parents = parents.next().unwrap();
         assert_eq!(parents[0].name, "Anne");
         assert_eq!(parents[1].name, "Thierry");
@@ -183,13 +194,13 @@ mod tests {
 
     #[test]
     fn as_affine_traversal() {
-        let mom = PersonMother.map_opt(Person::olivier(), |mut mom| {
+        let mom = Person::mother.map_opt(Person::olivier(), |mut mom| {
             mom.name = "Jocelyn".into();
             mom
         });
         assert_eq!(mom.unwrap().name, "Jocelyn");
 
-        let parents = PersonParents.map_opt(Person::olivier(), |mut parents| {
+        let parents = Person::parents.map_opt(Person::olivier(), |mut parents| {
             parents.pop();
             parents
         });
@@ -200,13 +211,13 @@ mod tests {
 
     #[test]
     fn as_traversal() {
-        let mut mom = PersonMother.traverse(Person::olivier(), |mut mom| {
+        let mut mom = Person::mother.traverse(Person::olivier(), |mut mom| {
             mom.name = "Jocelyn".into();
             mom
         });
         assert_eq!(mom.next().unwrap().name, "Jocelyn");
 
-        let mut parents = PersonParents.traverse(Person::olivier(), |mut parents| {
+        let mut parents = Person::parents.traverse(Person::olivier(), |mut parents| {
             parents.pop();
             parents
         });
@@ -217,13 +228,13 @@ mod tests {
 
     #[test]
     fn as_setter() {
-        let new_olivier = PersonMother.set(Person::olivier(), |mut mom| {
+        let new_olivier = Person::mother.set(Person::olivier(), |mut mom| {
             mom.name = "Jocelyn".into();
             mom
         });
         assert_eq!(new_olivier.parents[0].name, "Jocelyn");
 
-        let new_olivier = PersonParents.set(Person::olivier(), |mut parents| {
+        let new_olivier = Person::parents.set(Person::olivier(), |mut parents| {
             parents.pop();
             parents
         });

@@ -11,8 +11,10 @@ pub trait AffineTraversal<As, S> {
         self.impl_preview(source).map(f)
     }
 
+    #[doc(hidden)]
     fn impl_preview(&self, source: S) -> Option<Self::O>;
 
+    #[doc(hidden)]
     fn impl_set<F>(&self, source: S, f: F) -> S
     where
         F: Clone + FnMut(Self::O) -> Self::O;
@@ -120,7 +122,6 @@ mod tests {
             person_at::{PersonMotherAT, PersonParentsAT},
             person_folds::PersonParentsFold,
             person_setters::PersonNameSetter,
-            *,
         },
     };
 

@@ -63,7 +63,6 @@ mod tests {
             list_of::ListOf,
             person_af::{PersonMotherAF, PersonParentsAF},
             person_at::PersonMotherAT,
-            person_setters::PersonNameSetter,
         },
     };
 

@@ -29,14 +29,13 @@ pub mod review; // 9 = 1 + 4 * 2
 
 // 3rd degree - Complex
 pub mod lens; // 3 = 1 + 1 * 2
+pub mod prism; // 3
 
-// WIP
-mod prism; // 3
-           // mod rev_lens; // 3
-           // mod rev_prism; // 3
+// pub mod rev_lens; // 3
+// pub mod rev_prism; // 3
 
 // 4th degree
-// mod iso; // 1
+// pub mod iso; // 1
 
 // Combinators
 pub mod impls;
@@ -65,68 +64,16 @@ pub mod prelude {
 mod tests {
     use crate::{
         data::Person,
-        prelude::{
-            every::Every,
-            person_lenses::{PersonName, PersonParents},
-            Then,
-        },
+        prelude::{every::Every, Then},
         setter::Setter,
     };
 
     #[test]
     fn example() {
-        let telescope = PersonParents.then(Every).then(PersonName);
+        let telescope = Person::parents.then(Every).then(Person::name);
 
         let wojtek = telescope.set(Person::wojtek(), |x| x.to_uppercase());
         assert_eq!(wojtek.parents[0].name, "MIROSLAWA");
         assert_eq!(wojtek.parents[1].name, "ZENON");
     }
-    //     use crate::{
-    //         data::{
-    //             lenses::{PersonName, PersonParents},
-    //             Person,
-    //         },
-    //         prelude::{every::Every, filtered::Filtered, *},
-    //     };
-
-    //     #[test]
-    //     fn collections() {
-    //         let lens = PersonParents.then(Every);
-    //         let mut parents = lens.fold(Person::olivier());
-    //         assert_eq!(parents.next().unwrap().name, "Anne");
-    //         assert_eq!(parents.next().unwrap().name, "Thierry");
-    //         assert_eq!(parents.next(), None);
-    //     }
-
-    //     #[test]
-    //     fn long_collections() {
-    //         let lens = PersonParents.then(Every).then(PersonName);
-    //         let mut parents = lens.fold(Person::olivier());
-    //         assert_eq!(parents.next().unwrap(), "Anne");
-    //         assert_eq!(parents.next().unwrap(), "Thierry");
-    //         assert_eq!(parents.next(), None);
-
-    //         let lens = PersonParents
-    //             .then(Filtered(|person: &Person| person.age < 56))
-    //             .then(PersonName);
-    //         let mut parents = lens.fold(Person::olivier());
-    //         assert_eq!(parents.next().unwrap(), "Anne");
-    //         assert_eq!(parents.next(), None);
-
-    //         let lens = PersonParents
-    //             .then(Filtered(|person: &Person| person.age > 55))
-    //             .then(PersonName);
-    //         let mut parents = lens.fold(Person::olivier());
-    //         assert_eq!(parents.next().unwrap(), "Thierry");
-    //         assert_eq!(parents.next(), None);
-
-    //         let lens = PersonParents
-    //             .then(Filtered(|person: &Person| person.age > 55))
-    //             .then(PersonName);
-
-    //         let new_olivier = lens.set(Person::olivier(), |_t| "Mark".to_string());
-
-    //         assert_eq!(new_olivier.parents[0].name, "Anne");
-    //         assert_eq!(new_olivier.parents[1].name, "Mark");
-    //     }
 }

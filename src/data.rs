@@ -1,6 +1,8 @@
+use crate::prelude::*;
+
 pub mod lenses;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Lens)]
 pub struct Person {
     pub age: u32,
     pub name: String,
@@ -68,22 +70,22 @@ impl Person {
         }
     }
 }
-#[allow(dead_code)]
-impl Person {
-    pub fn name(self) -> String {
-        self.name
-    }
-    pub fn name_mut(&mut self) -> &mut String {
-        &mut self.name
-    }
-    pub fn set_name(mut self, name: String) -> Self {
-        self.name = name;
-        self
-    }
-    pub fn name_opt(self) -> Option<String> {
-        Some(self.name)
-    }
-}
+// #[allow(dead_code)]
+// impl Person {
+//     pub fn name(self) -> String {
+//         self.name
+//     }
+//     pub fn name_mut(&mut self) -> &mut String {
+//         &mut self.name
+//     }
+//     pub fn set_name(mut self, name: String) -> Self {
+//         self.name = name;
+//         self
+//     }
+//     pub fn name_opt(self) -> Option<String> {
+//         Some(self.name)
+//     }
+// }
 
 pub struct Test(pub String);
 pub struct Arg;

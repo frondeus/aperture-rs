@@ -12,7 +12,10 @@ pub trait Traversal<As, S> // where
         self.impl_fold(source).map(f)
     }
 
+    #[doc(hidden)]
     fn impl_fold(&self, source: S) -> Self::D;
+
+    #[doc(hidden)]
     fn impl_set<F>(&self, source: S, f: F) -> S
     where
         F: Clone + FnMut(<Self::D as Iterator>::Item) -> <Self::D as Iterator>::Item;
@@ -92,7 +95,6 @@ mod tests {
         prelude::{
             every::Every,
             filtered::Filtered,
-            person_af::PersonMotherAF,
             person_at::PersonMotherAT,
             person_folds::PersonParentsFold,
             person_setters::PersonNameSetter,
@@ -138,8 +140,8 @@ mod tests {
 
         let src = vec![Person::olivier(), Person::wojtek()];
 
-        let res: Vec<Person> = lens.fold(src).collect();
-        let res = res.into_iter().map(|p| p.name).collect::<Vec<_>>();
+        let res = lens.fold(src);
+        let res = res.map(|p| p.name).collect::<Vec<_>>();
         assert_eq!(res, vec!["Anne", "Thierry", "Miroslawa", "Zenon"]);
     }
 

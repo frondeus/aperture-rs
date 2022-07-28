@@ -3,8 +3,11 @@ use crate::prelude::*;
 pub struct AsPrism;
 pub trait Prism<As, S> {
     type Variant;
+    #[doc(hidden)]
     fn impl_preview(&self, source: S) -> Option<Self::Variant>;
+    #[doc(hidden)]
     fn impl_review(&self, variant: Self::Variant) -> S;
+    #[doc(hidden)]
     fn impl_set<F>(&self, source: S, f: F) -> S
     where
         F: Clone + FnMut(Self::Variant) -> Self::Variant;

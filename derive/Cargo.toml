@@ -8,5 +8,6 @@ edition = "2021"
 proc-macro = true
 
 [dependencies]
+itertools = "0.10.3"
 quote = "1.0.20"
 syn = "1.0.98"
