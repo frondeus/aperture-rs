@@ -14,6 +14,11 @@ impl AffineFold<AsAffineFold, Person> for PersonMotherAF {
     }
 }
 
+// impl AffineFoldRef<AsAffineFold, Person> for PersonMotherAF {
+//     fn preview_ref<'a>(&self, source: &'a Person) -> Option<&'a Self::T> {
+//         source.parents.first()
+//     }
+// }
 impl<'a> AffineFold<AsAffineFold, &'a Person> for PersonMotherAF {
     type T = &'a Person;
 

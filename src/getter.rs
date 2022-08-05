@@ -10,6 +10,15 @@ pub trait Getter<As, S> {
         Some(self.view(source))
     }
 }
+pub trait GetterRef<As, S>: Getter<As, S> {
+    fn view_ref<'a>(&self, source: &'a S) -> &'a <Self as Getter<As, S>>::T;
+
+    #[doc(hidden)]
+    fn impl_preview_ref<'a>(&self, source: &'a S) -> Option<&'a Self::T> {
+        Some(self.view_ref(source))
+    }
+}
+
 impl<S, X> Optics<AsGetter, S> for X where X: Getter<AsGetter, S> {}
 
 impl<X, S> AffineFold<AsGetter, S> for X
@@ -30,6 +39,44 @@ where
 
     fn fold(&self, source: S) -> Self::D {
         self.preview(source).into_iter()
+    }
+}
+
+impl<X, S> AffineFoldRef<AsGetter, S> for X
+where
+    X: GetterRef<AsGetter, S>,
+{
+    fn preview_ref<'a>(&self, source: &'a S) -> Option<&'a Self::T> {
+        self.impl_preview_ref(source)
+    }
+}
+impl<X, S> FoldRef<AsGetter, S> for X
+where
+    X: AffineFoldRef<AsGetter, S>,
+    for<'a> X::T: 'a,
+    for<'a> S: 'a,
+{
+    type Item<'a> = X::T;
+
+    type DRef<'a> = std::option::IntoIter<&'a X::T>;
+
+    fn fold_ref<'a>(&self, source: &'a S) -> Self::DRef<'a> {
+        self.preview_ref(source).into_iter()
+    }
+}
+
+impl<X, S, T> GetterRef<AsGetter, S> for X
+where
+    X: for<'b> Getter<AsGetter, &'b S, T = &'b T>,
+    X: Getter<AsGetter, S, T = T>,
+{
+    fn view_ref<'a>(&self, source: &'a S) -> &'a T {
+        self.view(source)
+    }
+
+    #[doc(hidden)]
+    fn impl_preview_ref<'a>(&self, source: &'a S) -> Option<&'a Self::T> {
+        self.impl_preview(source)
     }
 }
 

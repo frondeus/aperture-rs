@@ -45,6 +45,11 @@ pub fn lens_derive(input: TokenStream) -> TokenStream {
                                 f(&mut source.#lower_name);
                             }
                         }
+                        impl LensRef<AsLens, #main_name> for #name {
+                            fn impl_view_ref<'a>(&self, source: &'a #main_name) -> &'a Self::View {
+                                &source.#lower_name
+                            }
+                        }
 
                     };
                     

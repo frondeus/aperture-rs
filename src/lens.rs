@@ -8,6 +8,12 @@ pub trait Lens<As, S> {
     type View;
     #[doc(hidden)]
     fn impl_view(&self, source: S) -> Self::View;
+
+    #[doc(hidden)]
+    fn impl_preview(&self, source: S) -> Option<Self::View> {
+        Some(self.impl_view(source))
+    }
+
     #[doc(hidden)]
     fn impl_set<F: Clone + FnMut(Self::View) -> Self::View>(&self, source: S, f: F) -> S;
 }
@@ -15,6 +21,16 @@ pub trait Lens<As, S> {
 pub trait LensMut<As, S>: Lens<As, S> {
     #[doc(hidden)]
     fn impl_set_mut<F: Clone + FnMut(&mut Self::View)>(&self, source: &mut S, f: F);
+}
+
+pub trait LensRef<As, S>: LensMut<As, S> {
+    #[doc(hidden)]
+    fn impl_view_ref<'a>(&self, source: &'a S) -> &'a Self::View;
+
+    #[doc(hidden)]
+    fn impl_preview_ref<'a>(&self, source: &'a S) -> Option<&'a Self::View> {
+        Some(self.impl_view_ref(source))
+    }
 }
 
 impl<S, X> Optics<AsLens, S> for X where X: Lens<AsLens, S> {}
@@ -27,6 +43,10 @@ where
 
     fn view(&self, source: S) -> <Self as Getter<AsLens, S>>::T {
         self.impl_view(source)
+    }
+
+    fn impl_preview(&self, source: S) -> Option<Self::T> {
+        self.impl_preview(source)
     }
 }
 
@@ -131,6 +151,42 @@ where
     }
 }
 
+impl<X, S> GetterRef<AsLens, S> for X
+where
+    X: LensRef<AsLens, S>,
+{
+    fn view_ref<'a>(&self, source: &'a S) -> &'a <Self as Getter<AsLens, S>>::T {
+        self.impl_view_ref(source)
+    }
+
+    fn impl_preview_ref<'a>(&self, source: &'a S) -> Option<&'a Self::T> {
+        self.impl_preview_ref(source)
+    }
+}
+
+impl<X, S> AffineFoldRef<AsLens, S> for X
+where
+    X: GetterRef<AsLens, S>,
+{
+    fn preview_ref<'a>(&self, source: &'a S) -> Option<&'a Self::T> {
+        self.impl_preview_ref(source)
+    }
+}
+impl<X, S> FoldRef<AsLens, S> for X
+where
+    X: AffineFoldRef<AsLens, S>,
+    for<'a> X::T: 'a,
+    for<'a> S: 'a,
+{
+    type Item<'a> = X::T;
+
+    type DRef<'a> = std::option::IntoIter<&'a X::T>;
+
+    fn fold_ref<'a>(&self, source: &'a S) -> Self::DRef<'a> {
+        self.preview_ref(source).into_iter()
+    }
+}
+
 macro_rules! impl_and {
  ($as: ident, $(($l:ident, $r:ident),)*) => { impl_and!(@ ($as, $as), $(($l, $r), ($r, $l),)*); };
  (@ $(($l:ident, $r:ident),)*) => {$(
@@ -156,6 +212,17 @@ where
 {
     fn impl_set_mut<F: Clone + FnMut(&mut Self::View)>(&self, source: &mut S, f: F) {
         self.0.impl_set_mut(source, |p|  self.1.impl_set_mut(p, f.clone())   )
+    }
+}
+impl<L1, L2, S> LensRef<AsLens, S> for And<L1, L2, ($l, $r), (S, L1::View)>
+where
+    L1: LensRef<$l, S>,
+    L2: LensRef<$r, L1::View>,
+    for<'a> L1::View: 'a
+{
+    #[doc(hidden)]
+    fn impl_view_ref<'a>(&self, source: &'a S) -> &'a Self::View {
+        self.1.impl_view_ref(self.0.impl_view_ref(source))
     }
 }
  )*};
@@ -194,13 +261,22 @@ mod tests {
 
     #[test]
     fn lens_and_lens_mut() {
-        // let lens = Person::mother.then(Person::name);
         let lens = Person::mother.then_name();
 
         let mut olivier = Person::olivier();
 
         lens.set_mut(&mut olivier, |name| *name = name.to_uppercase());
         assert_eq!(&olivier.parents[0].name, "ANNE");
+    }
+
+    #[test]
+    fn lens_and_lens_ref() {
+        let lens = Person::mother.then_name();
+
+        let wojtek = Person::wojtek();
+
+        let name = lens.view_ref(&wojtek);
+        assert_eq!(name, "Miroslawa");
     }
 
     #[test]

@@ -60,6 +60,7 @@ macro_rules! impl_fold {
                 nested::NestedFold::new(self.0.fold(source), self.1.clone())
             }
         }
+
     )*};
 }
 

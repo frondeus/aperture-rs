@@ -13,6 +13,17 @@ impl<T> Getter<AsGetter, Option<T>> for Unwrap {
         source
     }
 }
+impl<'a, T> Getter<AsGetter, &'a Option<T>> for Unwrap {
+    type T = &'a T;
+
+    fn view(&self, source: &'a Option<T>) -> &'a <Self as Getter<AsGetter, Option<T>>>::T {
+        source.as_ref().unwrap()
+    }
+
+    fn impl_preview(&self, source: &'a Option<T>) -> Option<Self::T> {
+        source.as_ref()
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -37,5 +48,18 @@ mod tests {
         let test: Option<String> = Some("Foo".into());
 
         assert_eq!(Unwrap.fold(test).next(), Some("Foo".to_string()));
+    }
+
+    #[test]
+    fn as_ref() {
+        let test: Option<String> = Some("Foo".into());
+
+        assert_eq!(Unwrap.view_ref(&test), "Foo");
+        assert_eq!(Unwrap.preview_ref(&test).unwrap(), "Foo");
+        assert_eq!(Unwrap.fold_ref(&test).next().unwrap(), "Foo");
+
+        assert_eq!(Unwrap.view(&test), "Foo");
+        assert_eq!(Unwrap.preview(&test).unwrap(), "Foo");
+        assert_eq!(Unwrap.fold(&test).next().unwrap(), "Foo");
     }
 }

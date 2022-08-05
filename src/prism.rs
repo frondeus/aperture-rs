@@ -19,6 +19,10 @@ pub trait PrismMut<As, S>: Prism<As, S> {
     where
         F: Clone + FnMut(&mut Self::Variant);
 }
+pub trait PrismRef<As, S>: PrismMut<As, S> {
+    #[doc(hidden)]
+    fn impl_preview_ref<'a>(&self, source: &'a S) -> Option<&'a Self::Variant>;
+}
 
 impl<S, X> Optics<AsPrism, S> for X where X: Prism<AsPrism, S> {}
 
@@ -47,8 +51,6 @@ where
     where
         F: Clone + FnMut(Self::O) -> Self::O,
     {
-        // let inner = self.impl_preview(source).map(f);
-        // self.impl_review(inner)
         Prism::impl_set(self, source, f)
     }
 }
@@ -137,6 +139,51 @@ where
         F: FnMut(&mut Self::O) + Clone,
     {
         self.impl_set_mut(source, f);
+    }
+}
+
+impl<X, S> AffineTraversalRef<AsPrism, S> for X
+where
+    X: PrismRef<AsPrism, S>,
+{
+    fn impl_preview_ref<'a>(&self, source: &'a S) -> Option<&'a Self::O> {
+        self.impl_preview_ref(source)
+    }
+}
+impl<X, S> AffineFoldRef<AsPrism, S> for X
+where
+    X: AffineTraversalRef<AsPrism, S>,
+{
+    fn preview_ref<'a>(&self, source: &'a S) -> Option<&'a Self::T> {
+        self.impl_preview_ref(source)
+    }
+}
+impl<X, S> TraversalRef<AsPrism, S> for X
+where
+    X: AffineTraversalRef<AsPrism, S>,
+    for<'a> X::O: 'a,
+    for<'a> S: 'a,
+{
+    type Item<'a> = X::O;
+
+    type DRef<'a> = std::option::IntoIter<&'a X::O>;
+
+    fn impl_fold_ref<'a>(&self, source: &'a S) -> Self::DRef<'a> {
+        self.impl_preview_ref(source).into_iter()
+    }
+}
+impl<X, S> FoldRef<AsPrism, S> for X
+where
+    X: AffineFoldRef<AsPrism, S>,
+    for<'a> X::T: 'a,
+    for<'a> S: 'a,
+{
+    type Item<'a> = X::T;
+
+    type DRef<'a> = std::option::IntoIter<&'a X::T>;
+
+    fn fold_ref<'a>(&self, source: &'a S) -> Self::DRef<'a> {
+        self.preview_ref(source).into_iter()
     }
 }
 

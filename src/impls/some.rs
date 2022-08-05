@@ -29,6 +29,11 @@ impl<T> PrismMut<AsPrism, Option<T>> for Some {
         source.as_mut().map(f);
     }
 }
+impl<T> PrismRef<AsPrism, Option<T>> for Some {
+    fn impl_preview_ref<'a>(&self, source: &'a Option<T>) -> Option<&'a Self::Variant> {
+        source.as_ref()
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -80,5 +85,23 @@ mod tests {
         Some.set_mut(&mut y, |x| *x = *x + 1);
         assert_eq!(x, Option::Some(5));
         assert_eq!(y, None);
+    }
+
+    #[test]
+    fn as_fold_ref() {
+        let x = Option::Some(4);
+        let y: Option<u32> = None;
+
+        assert_eq!(Some.fold_ref(&x).next(), Option::Some(&4));
+        assert_eq!(Some.fold_ref(&y).next(), None);
+    }
+
+    #[test]
+    fn as_af_ref() {
+        let x = Option::Some(4);
+        let y: Option<u32> = None;
+
+        assert_eq!(Some.preview_ref(&x), Option::Some(&4));
+        assert_eq!(Some.preview_ref(&y), None);
     }
 }
