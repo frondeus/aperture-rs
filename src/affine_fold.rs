@@ -2,11 +2,13 @@ use crate::prelude::*;
 
 #[derive(Debug, Default)]
 pub struct AsAffineFold;
-pub trait AffineFold<As, S> // where
-//     Self: Fold<As, S>,
-{
+pub trait AffineFold<As, S> {
     type T;
     fn preview(&self, source: S) -> Option<Self::T>;
+}
+
+pub trait AffineFoldRef<As, S>: AffineFold<As, S> {
+    fn preview_ref<'a>(&self, source: &'a S) -> Option<&'a Self::T>;
 }
 
 impl<S, X> Optics<AsAffineFold, S> for X where X: AffineFold<AsAffineFold, S> {}
@@ -18,6 +20,22 @@ where
 
     fn fold(&self, source: S) -> Self::D {
         self.preview(source).into_iter()
+    }
+}
+
+#[cfg(feature = "gat")]
+impl<X, S> FoldRef<AsAffineFold, S> for X
+where
+    X: AffineFoldRef<AsAffineFold, S>,
+    for<'a> X::T: 'a,
+    for<'a> S: 'a,
+{
+    type Item<'a> = X::T;
+
+    type DRef<'a> = std::option::IntoIter<&'a X::T>;
+
+    fn fold_ref<'a>(&self, source: &'a S) -> Self::DRef<'a> {
+        self.preview_ref(source).into_iter()
     }
 }
 

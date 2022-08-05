@@ -21,6 +21,11 @@ impl<'a> AffineFold<AsAffineFold, &'a Person> for PersonMotherAF {
         source.parents.first()
     }
 }
+impl AffineFoldRef<AsAffineFold, Person> for PersonMotherAF {
+    fn preview_ref<'a>(&self, source: &'a Person) -> Option<&'a Self::T> {
+        source.parents.first()
+    }
+}
 
 #[derive(Clone)]
 pub struct PersonParentsAF;
@@ -47,6 +52,10 @@ mod tests {
     fn af_ref() {
         let wojtek = Person::wojtek();
         let mother = PersonMotherAF.preview(&wojtek);
+        assert_eq!(mother.unwrap().name, "Miroslawa");
+
+        let wojtek = Person::wojtek();
+        let mother = PersonMotherAF.preview_ref(&wojtek);
         assert_eq!(mother.unwrap().name, "Miroslawa");
     }
 }

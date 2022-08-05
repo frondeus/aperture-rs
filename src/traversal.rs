@@ -26,10 +26,19 @@ pub trait TraversalRef<As, S>: TraversalMut<As, S> {
     type Item<'a>: 'a
     where
         S: 'a;
+
     type DRef<'a>: Iterator<Item = &'a Self::Item<'a>>
     where
         S: 'a;
+
     fn impl_fold_ref<'a>(&self, source: &'a S) -> Self::DRef<'a>;
+
+    fn traverse_ref<'a, F, T>(&self, source: &'a S, f: F) -> std::iter::Map<Self::DRef<'a>, F>
+    where
+        F: FnMut(&'a Self::Item<'a>) -> T,
+    {
+        self.impl_fold_ref(source).map(f)
+    }
 }
 
 pub trait TraversalMut<As, S>: Traversal<As, S> {
@@ -79,11 +88,10 @@ where
 }
 
 #[cfg(feature = "gat")]
-impl<X, S, T> FoldRef<AsTraversal, S> for X
+impl<X, S> FoldRef<AsTraversal, S> for X
 where
     X: TraversalRef<AsTraversal, S>,
-    for<'a> &'a S: IntoIterator<Item = &'a T>,
-    S: FromIterator<T> + Iterator<Item = T>,
+    S: IntoIterator + FromIterator<S::Item>,
 {
     type Item<'a> = X::Item<'a> where S: 'a;
 
