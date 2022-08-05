@@ -21,6 +21,16 @@ impl AffineTraversal<AsAffineTraversal, Person> for PersonMotherAT {
     }
 }
 
+impl AffineTraversalMut<AsAffineTraversal, Person> for PersonMotherAT {
+    fn impl_set_mut<F>(&self, source: &mut Person, f: F)
+    where
+        F: Clone + FnMut(&mut Self::O),
+    {
+        let mut parents = source.parents.iter_mut();
+        parents.next().map(f);
+    }
+}
+
 #[derive(Clone)]
 pub struct PersonParentsAT;
 
@@ -37,5 +47,21 @@ impl AffineTraversal<AsAffineTraversal, Person> for PersonParentsAT {
     {
         source.parents = f(source.parents);
         source
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn as_mut() {
+        let lens = PersonMotherAT;
+        let mut wojtek = Person::wojtek();
+        lens.set_mut(&mut wojtek, |mom| {
+            mom.name = mom.name.to_uppercase();
+        });
+        let mom = &wojtek.parents[0].name;
+        assert_eq!(mom, "MIROSLAWA");
     }
 }

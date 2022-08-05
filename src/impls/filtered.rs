@@ -26,6 +26,23 @@ where
             .collect()
     }
 }
+impl<S, Filter, T> TraversalMut<AsTraversal, S> for Filtered<Filter>
+where
+    Filter: for<'a> FnMut(&'a T) -> bool + Clone,
+    S: IntoIterator<Item = T> + FromIterator<T>,
+    for<'a> &'a mut S: IntoIterator<Item = &'a mut T>,
+{
+    fn impl_set_mut<F>(&self, source: &mut S, mut f: F)
+    where
+        F: Clone + FnMut(&mut <Self::D as Iterator>::Item),
+    {
+        source.into_iter().for_each(|o| {
+            if (self.0.clone())(&o) {
+                f(o);
+            }
+        });
+    }
+}
 
 #[cfg(test)]
 mod tests {

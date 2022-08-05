@@ -1,7 +1,4 @@
-use crate::{
-    data::Person,
-    prelude::{AsFold, Fold},
-};
+use crate::{data::Person, prelude::*};
 
 #[derive(Clone)]
 pub struct PersonParentsFold;
@@ -12,6 +9,13 @@ impl Fold<AsFold, Person> for PersonParentsFold {
         source.parents.into_iter()
     }
 }
+
+// impl FoldRef<AsFold, Person> for PersonParentsFold {
+//     type DRef = std::slice::Iter<Person>;
+//     fn fold_ref(&self, source: &Person) -> Self::D {
+//         self.parents.iter()
+//     }
+// }
 
 #[derive(Clone)]
 pub struct PersonGrandParentsFold;

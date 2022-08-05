@@ -12,6 +12,11 @@ pub trait Lens<As, S> {
     fn impl_set<F: Clone + FnMut(Self::View) -> Self::View>(&self, source: S, f: F) -> S;
 }
 
+pub trait LensMut<As, S>: Lens<As, S> {
+    #[doc(hidden)]
+    fn impl_set_mut<F: Clone + FnMut(&mut Self::View)>(&self, source: &mut S, f: F);
+}
+
 impl<S, X> Optics<AsLens, S> for X where X: Lens<AsLens, S> {}
 
 impl<X, S> Getter<AsLens, S> for X
@@ -85,14 +90,44 @@ where
 {
     type O = <X::D as Iterator>::Item;
 
-    type D = S;
-    type T = <X::D as Iterator>::Item;
-
-    fn set<F>(&self, source: S, f: F) -> Self::D
+    fn set<F>(&self, source: S, f: F) -> S
     where
-        F: Clone + FnMut(Self::O) -> Self::T + Clone,
+        F: Clone + FnMut(Self::O) -> Self::O + Clone,
     {
         self.impl_set(source, f)
+    }
+}
+impl<X, S> AffineTraversalMut<AsLens, S> for X
+where
+    X: LensMut<AsLens, S>,
+{
+    fn impl_set_mut<F>(&self, source: &mut S, f: F)
+    where
+        F: Clone + FnMut(&mut Self::O),
+    {
+        self.impl_set_mut(source, f);
+    }
+}
+impl<X, S> TraversalMut<AsLens, S> for X
+where
+    X: AffineTraversalMut<AsLens, S>,
+{
+    fn impl_set_mut<F>(&self, source: &mut S, f: F)
+    where
+        F: Clone + FnMut(&mut <Self::D as Iterator>::Item),
+    {
+        self.impl_set_mut(source, f);
+    }
+}
+impl<X, S> SetterMut<AsLens, S> for X
+where
+    X: TraversalMut<AsLens, S>,
+{
+    fn set_mut<F>(&self, source: &mut S, f: F)
+    where
+        F: FnMut(&mut Self::O) + Clone,
+    {
+        self.impl_set_mut(source, f);
     }
 }
 
@@ -112,6 +147,15 @@ where
 
     fn impl_set<F: Clone + FnMut(Self::View) -> Self::View>(&self, source: S, f: F) -> S {
         self.0.set(source, |p| self.1.set(p, f.clone()))
+    }
+}
+impl<L1, L2, S> LensMut<AsLens, S> for And<L1, L2, ($l, $r), (S, L1::View)>
+where
+    L1: LensMut<$l, S>,
+    L2: LensMut<$r, L1::View>,
+{
+    fn impl_set_mut<F: Clone + FnMut(&mut Self::View)>(&self, source: &mut S, f: F) {
+        self.0.impl_set_mut(source, |p|  self.1.impl_set_mut(p, f.clone())   )
     }
 }
  )*};
@@ -146,6 +190,17 @@ mod tests {
 
         let olivier = lens.set(Person::olivier(), |name| name.to_uppercase());
         assert_eq!(olivier.parents[0].name, "ANNE");
+    }
+
+    #[test]
+    fn lens_and_lens_mut() {
+        // let lens = Person::mother.then(Person::name);
+        let lens = Person::mother.then_name();
+
+        let mut olivier = Person::olivier();
+
+        lens.set_mut(&mut olivier, |name| *name = name.to_uppercase());
+        assert_eq!(&olivier.parents[0].name, "ANNE");
     }
 
     #[test]

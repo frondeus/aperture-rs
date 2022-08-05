@@ -8,6 +8,10 @@ pub trait Fold<As, S> {
     fn fold(&self, source: S) -> Self::D;
 }
 
+// pub trait FoldRef<'a, As, S>: Fold<As, S, D: Iterator<Iterm>> {
+//     fn fold_ref(&self, source: &S) -> Self::DRef;
+// }
+
 mod nested;
 pub use nested::*;
 

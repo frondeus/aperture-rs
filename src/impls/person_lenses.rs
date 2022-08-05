@@ -33,6 +33,13 @@ impl Lens<AsLens, Person> for PersonMother {
     }
 }
 
+impl LensMut<AsLens, Person> for PersonMother {
+    fn impl_set_mut<F: Clone + FnMut(&mut Self::View)>(&self, source: &mut Person, f: F) {
+        let mut iter = source.parents.iter_mut();
+        iter.next().map(f);
+    }
+}
+
 // #[derive(Default, Debug)]
 // pub struct PersonParents;
 
@@ -71,3 +78,24 @@ pub trait PersonLensesExt<S>: Lens<AsLens, S> + Sized {
     // }
 }
 impl<L, S> PersonLensesExt<S> for L where L: Lens<AsLens, S, View = Person> {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn as_mut() {
+        let lens = PersonMother;
+        let mut wojtek = Person::wojtek();
+        lens.set_mut(&mut wojtek, |mom| {
+            mom.name = mom.name.to_uppercase();
+        });
+        let mom = &wojtek.parents[0].name;
+        assert_eq!(mom, "MIROSLAWA");
+
+        Person::name.set_mut(&mut wojtek, |name| {
+            *name = "Philip".into();
+        });
+        assert_eq!(wojtek.name, "Philip");
+    }
+}

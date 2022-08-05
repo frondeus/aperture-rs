@@ -20,6 +20,13 @@ pub trait AffineTraversal<As, S> {
         F: Clone + FnMut(Self::O) -> Self::O;
 }
 
+pub trait AffineTraversalMut<As, S>: AffineTraversal<As, S> {
+    #[doc(hidden)]
+    fn impl_set_mut<F>(&self, source: &mut S, f: F)
+    where
+        F: Clone + FnMut(&mut Self::O);
+}
+
 impl<S, X> Optics<AsAffineTraversal, S> for X where X: AffineTraversal<AsAffineTraversal, S> {}
 impl<X, S> AffineFold<AsAffineTraversal, S> for X
 where
@@ -55,12 +62,9 @@ where
 {
     type O = <X::D as Iterator>::Item;
 
-    type D = S;
-    type T = <X::D as Iterator>::Item;
-
-    fn set<F>(&self, source: S, f: F) -> Self::D
+    fn set<F>(&self, source: S, f: F) -> S
     where
-        F: Clone + FnMut(Self::O) -> Self::T + Clone,
+        F: Clone + FnMut(Self::O) -> Self::O + Clone,
     {
         self.impl_set(source, f)
     }
@@ -73,6 +77,29 @@ where
 
     fn fold(&self, source: S) -> Self::D {
         self.preview(source).into_iter()
+    }
+}
+
+impl<X, S> TraversalMut<AsAffineTraversal, S> for X
+where
+    X: AffineTraversalMut<AsAffineTraversal, S>,
+{
+    fn impl_set_mut<F>(&self, source: &mut S, f: F)
+    where
+        F: Clone + FnMut(&mut <Self::D as Iterator>::Item),
+    {
+        self.impl_set_mut(source, f);
+    }
+}
+impl<X, S> SetterMut<AsAffineTraversal, S> for X
+where
+    X: TraversalMut<AsAffineTraversal, S>,
+{
+    fn set_mut<F>(&self, source: &mut S, f: F)
+    where
+        F: FnMut(&mut Self::O) + Clone,
+    {
+        self.impl_set_mut(source, f);
     }
 }
 
@@ -98,6 +125,19 @@ where
         F: Clone + FnMut(Self::O) -> Self::O,
     {
         self.0.set(source, |x| self.1.set(x, f.clone()))
+    }
+}
+impl<L1, L2, S> AffineTraversalMut<AsAffineTraversal, S>
+    for And<L1, L2, ($l, $r), (S, L1::O)>
+where
+    L1: AffineTraversalMut<$l, S>,
+    L2: AffineTraversalMut<$r, L1::O>,
+{
+    fn impl_set_mut<F>(&self, source: &mut S, f: F)
+    where
+        F: Clone + FnMut(&mut Self::O),
+    {
+        self.0.impl_set_mut(source, |x| self.1.impl_set_mut(x, f.clone()));
     }
 }
  )*};
@@ -137,6 +177,15 @@ mod tests {
             n
         });
         assert_eq!(wojtek.parents[0].parents[0].name, "LIDIA");
+    }
+    #[test]
+    fn at_and_at_mut() {
+        let lens = PersonMotherAT.then(PersonMotherAT);
+        let mut wojtek = Person::wojtek();
+        lens.set_mut(&mut wojtek, |n| {
+            n.name = n.name.to_uppercase();
+        });
+        assert_eq!(&wojtek.parents[0].parents[0].name, "LIDIA");
     }
 
     #[test]

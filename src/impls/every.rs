@@ -20,6 +20,21 @@ where
     }
 }
 
+impl<S, T> TraversalMut<AsTraversal, S> for Every
+where
+    S: IntoIterator<Item = T> + FromIterator<T>,
+    for<'a> &'a mut S: IntoIterator<Item = &'a mut T>,
+{
+    fn impl_set_mut<F>(&self, source: &mut S, mut f: F)
+    where
+        F: Clone + FnMut(&mut <Self::D as Iterator>::Item),
+    {
+        source.into_iter().for_each(|i| {
+            f(i);
+        });
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -29,6 +44,17 @@ mod tests {
         let test: Vec<String> = vec!["foo".into(), "bar".into()];
 
         let mut iter = Every.traverse(test, |x: String| x.to_uppercase());
+        assert_eq!(iter.next().unwrap(), "FOO");
+        assert_eq!(iter.next().unwrap(), "BAR");
+        assert_eq!(iter.next(), None);
+    }
+
+    #[test]
+    fn as_mut() {
+        let mut test: Vec<String> = vec!["foo".into(), "bar".into()];
+
+        Every.set_mut(&mut test, |x: &mut String| *x = x.to_uppercase());
+        let mut iter = test.into_iter();
         assert_eq!(iter.next().unwrap(), "FOO");
         assert_eq!(iter.next().unwrap(), "BAR");
         assert_eq!(iter.next(), None);

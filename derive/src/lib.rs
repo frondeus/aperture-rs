@@ -40,6 +40,11 @@ pub fn lens_derive(input: TokenStream) -> TokenStream {
                                 source
                             }
                         }
+                        impl LensMut<AsLens, #main_name> for #name {
+                            fn impl_set_mut<F: Clone + FnMut(&mut Self::View)>(&self, source: &mut #main_name, mut f: F) {
+                                f(&mut source.#lower_name);
+                            }
+                        }
 
                     };
                     

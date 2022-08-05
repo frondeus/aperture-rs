@@ -13,6 +13,13 @@ pub trait Prism<As, S> {
         F: Clone + FnMut(Self::Variant) -> Self::Variant;
 }
 
+pub trait PrismMut<As, S>: Prism<As, S> {
+    #[doc(hidden)]
+    fn impl_set_mut<F>(&self, source: &mut S, f: F)
+    where
+        F: Clone + FnMut(&mut Self::Variant);
+}
+
 impl<S, X> Optics<AsPrism, S> for X where X: Prism<AsPrism, S> {}
 
 impl<X, S> Review<AsPrism, S> for X
@@ -92,14 +99,44 @@ where
 {
     type O = <X::D as Iterator>::Item;
 
-    type D = S;
-    type T = <X::D as Iterator>::Item;
-
-    fn set<F>(&self, source: S, f: F) -> Self::D
+    fn set<F>(&self, source: S, f: F) -> S
     where
-        F: Clone + FnMut(Self::O) -> Self::T + Clone,
+        F: Clone + FnMut(Self::O) -> Self::O + Clone,
     {
         self.impl_set(source, f)
+    }
+}
+impl<X, S> AffineTraversalMut<AsPrism, S> for X
+where
+    X: PrismMut<AsPrism, S>,
+{
+    fn impl_set_mut<F>(&self, source: &mut S, f: F)
+    where
+        F: Clone + FnMut(&mut Self::O),
+    {
+        self.impl_set_mut(source, f);
+    }
+}
+impl<X, S> TraversalMut<AsPrism, S> for X
+where
+    X: AffineTraversalMut<AsPrism, S>,
+{
+    fn impl_set_mut<F>(&self, source: &mut S, f: F)
+    where
+        F: Clone + FnMut(&mut <Self::D as Iterator>::Item),
+    {
+        self.impl_set_mut(source, f);
+    }
+}
+impl<X, S> SetterMut<AsPrism, S> for X
+where
+    X: TraversalMut<AsPrism, S>,
+{
+    fn set_mut<F>(&self, source: &mut S, f: F)
+    where
+        F: FnMut(&mut Self::O) + Clone,
+    {
+        self.impl_set_mut(source, f);
     }
 }
 
@@ -129,6 +166,17 @@ L2: Prism<$r, L1::Variant> {
         self.0.impl_set(source, |x| self.1.impl_set(x, f.clone()))
     }
 }
+impl <L1, L2, S> PrismMut<AsPrism, S> for And<L1, L2, ($l, $r), (S, L1::Variant)>
+where
+L1: PrismMut<$l, S>,
+L2: PrismMut<$r, L1::Variant> {
+    fn impl_set_mut<F>(&self, source: &mut S, f: F)
+    where
+        F: Clone + FnMut(&mut Self::Variant),
+    {
+        self.0.impl_set_mut(source, |x| self.1.impl_set_mut(x, f.clone()));
+    }
+}
 
  )*};
 }
@@ -137,3 +185,30 @@ impl_and!(
     AsPrism,
     // (AsPrism, AsIso),
 );
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::prelude::some::Some;
+
+    #[test]
+    fn prism_and_prism() {
+        let prism = Some.then(Some);
+
+        let src_some: Option<Option<u32>> = prism.review(4);
+        assert_eq!(src_some, Option::Some(Option::Some(4)));
+
+        let deep_some = prism.preview(src_some);
+        assert_eq!(deep_some, Option::Some(4));
+    }
+
+    #[test]
+    fn prism_and_prism_mut() {
+        let prism = Some.then(Some);
+
+        let mut src_some: Option<Option<u32>> = prism.review(4);
+
+        prism.set_mut(&mut src_some, |x| *x = *x + 1);
+        assert_eq!(src_some, Option::Some(Option::Some(5)));
+    }
+}

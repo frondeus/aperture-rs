@@ -1,35 +1,24 @@
 use crate::{data::Person, prelude::*};
 
-impl<'a> Setter<AsSetter, &'a mut Person> for PersonNameSetter {
-    type O = &'a mut String;
-
-    type D = ();
-
-    type T = ();
-
-    fn set<F>(&self, source: &'a mut Person, mut f: F) -> Self::D
-    where
-        F: FnMut(Self::O) -> Self::T + Clone,
-    {
-        f(&mut source.name);
-    }
-}
-
 #[derive(Clone)]
 pub struct PersonNameSetter;
 impl Setter<AsSetter, Person> for PersonNameSetter {
     type O = String;
 
-    type D = Person;
-
-    type T = String;
-
-    fn set<F>(&self, mut source: Person, mut f: F) -> Self::D
+    fn set<F>(&self, mut source: Person, mut f: F) -> Person
     where
-        F: FnMut(Self::O) -> Self::T + Clone,
+        F: FnMut(Self::O) -> Self::O + Clone,
     {
         source.name = f(source.name);
         source
+    }
+}
+impl SetterMut<AsSetter, Person> for PersonNameSetter {
+    fn set_mut<F>(&self, source: &mut Person, mut f: F)
+    where
+        F: FnMut(&mut Self::O) + Clone,
+    {
+        f(&mut source.name)
     }
 }
 
@@ -37,13 +26,9 @@ pub struct PersonMotherSetter;
 impl Setter<AsSetter, Person> for PersonMotherSetter {
     type O = Person;
 
-    type D = Person;
-
-    type T = Person;
-
-    fn set<F>(&self, mut source: Person, f: F) -> Self::D
+    fn set<F>(&self, mut source: Person, f: F) -> Person
     where
-        F: FnMut(Self::O) -> Self::T + Clone,
+        F: FnMut(Self::O) -> Self::O + Clone,
     {
         let mut parents = source.parents.into_iter();
         let mom = parents.next().map(f);
@@ -51,18 +36,22 @@ impl Setter<AsSetter, Person> for PersonMotherSetter {
         source
     }
 }
+impl SetterMut<AsSetter, Person> for PersonMotherSetter {
+    fn set_mut<F>(&self, source: &mut Person, f: F)
+    where
+        F: FnMut(&mut Self::O) + Clone,
+    {
+        source.parents.iter_mut().next().map(f);
+    }
+}
 
 pub struct PersonParentsSetter;
 impl Setter<AsSetter, Person> for PersonParentsSetter {
     type O = Vec<Person>;
 
-    type D = Person;
-
-    type T = Vec<Person>;
-
-    fn set<F>(&self, mut source: Person, mut f: F) -> Self::D
+    fn set<F>(&self, mut source: Person, mut f: F) -> Person
     where
-        F: FnMut(Self::O) -> Self::T + Clone,
+        F: FnMut(Self::O) -> Self::O + Clone,
     {
         let parents = f(source.parents);
         source.parents = parents;
@@ -83,7 +72,7 @@ mod tests {
     #[test]
     fn set_mut() {
         let mut wojtek = Person::wojtek();
-        PersonNameSetter.set(&mut wojtek, |x| *x = x.to_uppercase());
+        PersonNameSetter.set_mut(&mut wojtek, |x| *x = x.to_uppercase());
         assert_eq!(wojtek.name, "WOJTEK");
     }
 }

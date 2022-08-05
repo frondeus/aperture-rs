@@ -21,6 +21,14 @@ impl<T> Prism<AsPrism, Option<T>> for Some {
         source.map(f)
     }
 }
+impl<T> PrismMut<AsPrism, Option<T>> for Some {
+    fn impl_set_mut<F>(&self, source: &mut Option<T>, f: F)
+    where
+        F: Clone + FnMut(&mut Self::Variant),
+    {
+        source.as_mut().map(f);
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -62,5 +70,15 @@ mod tests {
     fn as_setter() {
         assert_eq!(Some.set(Option::Some(4), |x| x + 1), Option::Some(5));
         assert_eq!(Some.set(Option::<u32>::None, |x| x + 1), None);
+    }
+
+    #[test]
+    fn as_setter_mut() {
+        let mut x = Option::Some(4);
+        let mut y: Option<u32> = None;
+        Some.set_mut(&mut x, |x| *x = *x + 1);
+        Some.set_mut(&mut y, |x| *x = *x + 1);
+        assert_eq!(x, Option::Some(5));
+        assert_eq!(y, None);
     }
 }

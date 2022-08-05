@@ -20,6 +20,14 @@ pub trait Traversal<As, S> // where
     where
         F: Clone + FnMut(<Self::D as Iterator>::Item) -> <Self::D as Iterator>::Item;
 }
+
+pub trait TraversalMut<As, S>: Traversal<As, S> {
+    #[doc(hidden)]
+    fn impl_set_mut<F>(&self, source: &mut S, f: F)
+    where
+        F: Clone + FnMut(&mut <Self::D as Iterator>::Item);
+}
+
 impl<S, X> Optics<AsTraversal, S> for X where X: Traversal<AsTraversal, S> {}
 
 impl<X, S> Fold<AsTraversal, S> for X
@@ -39,15 +47,23 @@ where
     X: Traversal<AsTraversal, S>,
 {
     type O = <X::D as Iterator>::Item;
-
-    type D = S;
-    type T = <X::D as Iterator>::Item;
-
-    fn set<F>(&self, source: S, f: F) -> Self::D
+    fn set<F>(&self, source: S, f: F) -> S
     where
-        F: Clone + FnMut(Self::O) -> Self::T + Clone,
+        F: Clone + FnMut(Self::O) -> Self::O + Clone,
     {
         self.impl_set(source, f)
+    }
+}
+
+impl<X, S> SetterMut<AsTraversal, S> for X
+where
+    X: TraversalMut<AsTraversal, S>,
+{
+    fn set_mut<F>(&self, source: &mut S, f: F)
+    where
+        F: Clone + FnMut(&mut Self::O) + Clone,
+    {
+        self.impl_set_mut(source, f);
     }
 }
 
@@ -70,7 +86,20 @@ where
     where
         F: Clone + FnMut(<Self::D as Iterator>::Item) -> <Self::D as Iterator>::Item,
     {
-        self.0.impl_set(source, |x| self.1.set(x, f.clone()))
+        self.0.impl_set(source, |x| self.1.impl_set(x, f.clone()))
+    }
+}
+impl<L1, L2, S> TraversalMut<AsTraversal, S>
+    for And<L1, L2, ($l, $r), (S, <L1::D as Iterator>::Item)>
+where
+    L1: TraversalMut<$l, S>,
+    L2: Clone + TraversalMut<$r, <L1::D as Iterator>::Item>,
+{
+    fn impl_set_mut<F>(&self, source: &mut S, f: F)
+    where
+        F: Clone + FnMut(&mut <Self::D as Iterator>::Item),
+    {
+        self.0.impl_set_mut(source, |x| self.1.impl_set_mut(x, f.clone()))
     }
 }
  )*};
@@ -113,6 +142,13 @@ mod tests {
         let src = vec![vec![1, 2, 3]];
         let res = lens.set(src, |x| x + 8);
         assert_eq!(res, vec![vec![1, 10, 3]]);
+    }
+    #[test]
+    fn traversal_and_traversal_mut() {
+        let lens = Every.then(Filtered(|x: &i32| *x % 2 == 0));
+        let mut src = vec![vec![1, 2, 3]];
+        lens.set_mut(&mut src, |x| *x = *x + 8);
+        assert_eq!(src, vec![vec![1, 10, 3]]);
     }
 
     #[test]
