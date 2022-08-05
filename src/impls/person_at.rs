@@ -30,6 +30,11 @@ impl AffineTraversalMut<AsAffineTraversal, Person> for PersonMotherAT {
         parents.next().map(f);
     }
 }
+impl AffineTraversalRef<AsAffineTraversal, Person> for PersonMotherAT {
+    fn impl_preview_ref<'a>(&self, source: &'a Person) -> Option<&'a Self::O> {
+        source.parents.iter().next()
+    }
+}
 
 #[derive(Clone)]
 pub struct PersonParentsAT;
@@ -63,5 +68,29 @@ mod tests {
         });
         let mom = &wojtek.parents[0].name;
         assert_eq!(mom, "MIROSLAWA");
+    }
+
+    #[test]
+    fn as_ref() {
+        let lens = PersonMotherAT;
+        let wojtek = Person::wojtek();
+        let mom = lens.map_opt_ref(&wojtek, |mom| mom.name.to_uppercase());
+        assert_eq!(mom.unwrap(), "MIROSLAWA");
+
+        let mom = lens
+            .traverse_ref(&wojtek, |mom| mom.name.to_uppercase())
+            .next();
+        assert_eq!(mom.unwrap(), "MIROSLAWA");
+
+        let mom = lens.fold_ref(&wojtek).next();
+        assert_eq!(mom.unwrap().name, "Miroslawa");
+    }
+
+    #[test]
+    fn as_af_ref() {
+        let lens = PersonMotherAT;
+        let wojtek = Person::wojtek();
+        let mom = lens.preview_ref(&wojtek);
+        assert_eq!(mom.unwrap().name, "Miroslawa");
     }
 }

@@ -27,6 +27,18 @@ pub trait AffineTraversalMut<As, S>: AffineTraversal<As, S> {
         F: Clone + FnMut(&mut Self::O);
 }
 
+pub trait AffineTraversalRef<As, S>: AffineTraversalMut<As, S> {
+    #[doc(hidden)]
+    fn impl_preview_ref<'a>(&self, source: &'a S) -> Option<&'a Self::O>;
+
+    fn map_opt_ref<T, F>(&self, source: &S, f: F) -> Option<T>
+    where
+        F: FnOnce(&Self::O) -> T,
+    {
+        self.impl_preview_ref(source).map(f)
+    }
+}
+
 impl<S, X> Optics<AsAffineTraversal, S> for X where X: AffineTraversal<AsAffineTraversal, S> {}
 impl<X, S> AffineFold<AsAffineTraversal, S> for X
 where
@@ -100,6 +112,48 @@ where
         F: FnMut(&mut Self::O) + Clone,
     {
         self.impl_set_mut(source, f);
+    }
+}
+
+impl<X, S> TraversalRef<AsAffineTraversal, S> for X
+where
+    X: AffineTraversalRef<AsAffineTraversal, S>,
+    for<'a> X::O: 'a,
+    for<'a> S: 'a,
+{
+    type Item<'a> = X::O;
+
+    type DRef<'a> = std::option::IntoIter<&'a X::O>;
+
+    fn impl_fold_ref<'a>(&self, source: &'a S) -> Self::DRef<'a> {
+        self.impl_preview_ref(source).into_iter()
+    }
+}
+
+impl<X, S> AffineFoldRef<AsAffineTraversal, S> for X
+where
+    X: AffineTraversalRef<AsAffineTraversal, S>,
+    for<'a> X::O: 'a,
+    for<'a> S: 'a,
+{
+    fn preview_ref<'a>(&self, source: &'a S) -> Option<&'a Self::T> {
+        self.impl_preview_ref(source)
+    }
+}
+
+#[cfg(feature = "gat")]
+impl<X, S> FoldRef<AsAffineTraversal, S> for X
+where
+    X: AffineTraversalRef<AsAffineTraversal, S>,
+    for<'a> X::O: 'a,
+    for<'a> S: 'a,
+{
+    type Item<'a> = X::O;
+
+    type DRef<'a> = std::option::IntoIter<&'a X::O>;
+
+    fn fold_ref<'a>(&self, source: &'a S) -> Self::DRef<'a> {
+        self.impl_fold_ref(source)
     }
 }
 

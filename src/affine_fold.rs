@@ -39,6 +39,16 @@ where
     }
 }
 
+impl<X, S, T> AffineFoldRef<AsAffineFold, S> for X
+where
+    X: for<'b> AffineFold<AsAffineFold, &'b S, T = &'b T>,
+    X: AffineFold<AsAffineFold, S, T = T>,
+{
+    fn preview_ref<'a>(&self, source: &'a S) -> Option<&'a Self::T> {
+        self.preview(source)
+    }
+}
+
 macro_rules! impl_and {
  ($as: ident, $(($l:ident, $r:ident),)*) => { impl_and!(@ ($as, $as), $(($l, $r), ($r, $l)),*); };
  (@ $(($l:ident, $r:ident)),*) => {$(

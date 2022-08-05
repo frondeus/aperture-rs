@@ -20,6 +20,23 @@ where
     }
 }
 
+// impl<'a, S> Traversal<AsTraversal, &'a S> for Every
+// where
+//     S: IntoIterator + FromIterator<S::Item>,
+// {
+//     type D = S::IntoIter;
+//     fn impl_fold(&self, source: S) -> S::IntoIter {
+//         source.into_iter()
+//     }
+
+//     fn impl_set<F>(&self, source: S, f: F) -> S
+//     where
+//         F: FnMut(<Self::D as Iterator>::Item) -> <Self::D as Iterator>::Item,
+//     {
+//         self.traverse(source, f).collect()
+//     }
+// }
+
 impl<S, T> TraversalMut<AsTraversal, S> for Every
 where
     S: IntoIterator<Item = T> + FromIterator<T>,

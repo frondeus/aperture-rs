@@ -8,15 +8,15 @@ pub trait Fold<As, S> {
     fn fold(&self, source: S) -> Self::D;
 }
 
-#[cfg(not(feature = "gat"))]
-pub trait FoldRef<'a, As, S>
-where
-    Self: Fold<As, S>,
-    Self::D: Iterator,
-{
-    type DRef: 'a;
-    fn fold_ref(&self, source: &'a S) -> Self::DRef;
-}
+// #[cfg(not(feature = "gat"))]
+// pub trait FoldRef<'a, As, S>
+// where
+//     Self: Fold<As, S>,
+//     Self::D: Iterator,
+// {
+//     type DRef: 'a;
+//     fn fold_ref(&self, source: &'a S) -> Self::DRef;
+// }
 
 #[cfg(feature = "gat")]
 pub trait FoldRef<As, S>
