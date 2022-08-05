@@ -8,9 +8,31 @@ pub trait Fold<As, S> {
     fn fold(&self, source: S) -> Self::D;
 }
 
-// pub trait FoldRef<'a, As, S>: Fold<As, S, D: Iterator<Iterm>> {
-//     fn fold_ref(&self, source: &S) -> Self::DRef;
-// }
+#[cfg(not(feature = "gat"))]
+pub trait FoldRef<'a, As, S>
+where
+    Self: Fold<As, S>,
+    Self::D: Iterator,
+{
+    type DRef: 'a;
+    fn fold_ref(&self, source: &'a S) -> Self::DRef;
+}
+
+#[cfg(feature = "gat")]
+pub trait FoldRef<As, S>
+where
+    Self: Fold<As, S>,
+    Self::D: Iterator,
+{
+    type Item<'a>: 'a
+    where
+        S: 'a;
+    type DRef<'a>: Iterator<Item = &'a Self::Item<'a>>
+    where
+        S: 'a;
+
+    fn fold_ref<'a>(&self, source: &'a S) -> Self::DRef<'a>;
+}
 
 mod nested;
 pub use nested::*;

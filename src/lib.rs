@@ -1,4 +1,5 @@
 // #![feature(unboxed_closures, fn_traits, type_alias_impl_trait)]
+#![cfg_attr(feature = "gat", feature(generic_associated_types))]
 // #![allow(unused_imports)]
 #![deny(clippy::all)]
 // #![deny(clippy::pedantic)]
@@ -42,6 +43,7 @@ pub mod impls;
 pub mod then;
 
 pub mod prelude {
+    #[cfg(feature = "derive")]
     pub use lenses_derive::*;
 
     pub use crate::{
