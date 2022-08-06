@@ -43,6 +43,56 @@ where
         });
     }
 }
+impl<S, Filter, T> TraversalRef<AsTraversal, S> for Filtered<Filter>
+where
+    Filter: for<'a> FnMut(&'a T) -> bool + Clone,
+    S: IntoIterator<Item = T> + FromIterator<T>,
+    for<'a> &'a mut S: IntoIterator<Item = &'a mut T>,
+    for<'a> &'a S: IntoIterator<Item = &'a T>,
+    for<'a> T: 'a,
+    for<'a> S: 'a,
+{
+    type Item<'a> = T;
+
+    type DRef<'a> = FilterRef<'a, T, Filter, <&'a S as IntoIterator>::IntoIter>;
+
+    fn impl_fold_ref<'a>(&self, source: &'a S) -> Self::DRef<'a> {
+        FilterRef {
+            filter: self.0.clone(),
+            iter: source.into_iter(),
+        }
+    }
+}
+
+pub struct FilterRef<'a, T, Filter, Iter>
+where
+    Iter: Iterator<Item = &'a T>,
+    Filter: for<'b> FnMut(&'b T) -> bool + Clone,
+    T: 'a,
+{
+    filter: Filter,
+    iter: Iter,
+}
+
+impl<'a, T, Filter, Iter> Iterator for FilterRef<'a, T, Filter, Iter>
+where
+    Iter: Iterator<Item = &'a T>,
+    Filter: for<'b> FnMut(&'b T) -> bool + Clone,
+    T: 'a,
+{
+    type Item = &'a T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        loop {
+            let t = self.iter.next()?;
+            if !(self.filter)(t) {
+                continue;
+            } else {
+                return Some(t);
+            }
+        }
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -63,6 +113,15 @@ mod tests {
 
         let mut iter = Filtered(|x: &u32| x % 2 == 0).fold(test);
         assert_eq!(iter.next().unwrap(), 2);
+        assert_eq!(iter.next(), None);
+    }
+
+    #[test]
+    fn as_fold_ref() {
+        let test: Vec<u32> = vec![1, 2, 3];
+
+        let mut iter = Filtered(|x: &u32| x % 2 == 0).fold_ref(&test);
+        assert_eq!(iter.next().unwrap(), &2);
         assert_eq!(iter.next(), None);
     }
 

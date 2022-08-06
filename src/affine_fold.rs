@@ -23,7 +23,7 @@ where
     }
 }
 
-#[cfg(feature = "gat")]
+// #[cfg(feature = "gat")]
 impl<X, S> FoldRef<AsAffineFold, S> for X
 where
     X: AffineFoldRef<AsAffineFold, S>,
@@ -39,15 +39,15 @@ where
     }
 }
 
-impl<X, S, T> AffineFoldRef<AsAffineFold, S> for X
-where
-    X: for<'b> AffineFold<AsAffineFold, &'b S, T = &'b T>,
-    X: AffineFold<AsAffineFold, S, T = T>,
-{
-    fn preview_ref<'a>(&self, source: &'a S) -> Option<&'a Self::T> {
-        self.preview(source)
-    }
-}
+// impl<X, S, T> AffineFoldRef<AsAffineFold, S> for X
+// where
+//     X: for<'b> AffineFold<AsAffineFold, &'b S, T = &'b T>,
+//     X: AffineFold<AsAffineFold, S, T = T>,
+// {
+//     fn preview_ref<'a>(&self, source: &'a S) -> Option<&'a Self::T> {
+//         self.preview(source)
+//     }
+// }
 
 macro_rules! impl_and {
  ($as: ident, $(($l:ident, $r:ident),)*) => { impl_and!(@ ($as, $as), $(($l, $r), ($r, $l)),*); };
@@ -62,6 +62,17 @@ where
 
     fn preview(&self, source: S) -> Option<Self::T> {
         self.0.preview(source).and_then(|t| self.1.preview(t))
+    }
+}
+impl<L1, L2, S> AffineFoldRef<AsAffineFold, S>
+    for And<L1, L2, ($l, $r), (S, L1::T)>
+where
+    L1: AffineFoldRef<$l, S>,
+    L2: AffineFoldRef<$r, L1::T>,
+    for<'a> L1::T: 'a
+{
+    fn preview_ref<'a>(&self, source: &'a S) -> Option<&'a Self::T> {
+        self.0.preview_ref(source).and_then(|t| self.1.preview_ref(t))
     }
 }
  )*};

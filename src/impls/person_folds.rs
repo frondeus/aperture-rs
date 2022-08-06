@@ -9,7 +9,7 @@ impl Fold<AsFold, Person> for PersonParentsFold {
         source.parents.into_iter()
     }
 }
-#[cfg(feature = "gat")]
+// #[cfg(feature = "gat")]
 impl FoldRef<AsFold, Person> for PersonParentsFold {
     type Item<'a> = Person;
 
@@ -29,14 +29,14 @@ impl<'a> Fold<AsFold, Person> for PersonParentsFoldRef<'a> {
         source.parents.into_iter()
     }
 }
-#[cfg(not(feature = "gat"))]
-impl<'a> FoldRef<'a, AsFold, Person> for PersonParentsFoldRef<'a> {
-    type DRef = std::slice::Iter<'a, Person>;
+// #[cfg(not(feature = "gat"))]
+// impl<'a> FoldRef<'a, AsFold, Person> for PersonParentsFoldRef<'a> {
+//     type DRef = std::slice::Iter<'a, Person>;
 
-    fn fold_ref(&self, source: &'a Person) -> Self::DRef {
-        source.parents.iter()
-    }
-}
+//     fn fold_ref(&self, source: &'a Person) -> Self::DRef {
+//         source.parents.iter()
+//     }
+// }
 
 #[derive(Clone)]
 pub struct PersonGrandParentsFold;
@@ -71,17 +71,17 @@ mod tests {
         assert_eq!(iter.next(), None);
     }
 
-    #[cfg(not(feature = "gat"))]
-    #[test]
-    fn as_fold_ref() {
-        let wojtek = Person::wojtek();
-        let mut iter = PersonParentsFoldRef::default().fold_ref(&wojtek);
-        assert_eq!(iter.next().unwrap().name, "Miroslawa");
-        assert_eq!(iter.next().unwrap().name, "Zenon");
-        assert_eq!(iter.next(), None);
-    }
+    // #[cfg(not(feature = "gat"))]
+    // #[test]
+    // fn as_fold_ref() {
+    //     let wojtek = Person::wojtek();
+    //     let mut iter = PersonParentsFoldRef::default().fold_ref(&wojtek);
+    //     assert_eq!(iter.next().unwrap().name, "Miroslawa");
+    //     assert_eq!(iter.next().unwrap().name, "Zenon");
+    //     assert_eq!(iter.next(), None);
+    // }
 
-    #[cfg(feature = "gat")]
+    // #[cfg(feature = "gat")]
     #[test]
     fn as_fold_ref_gat() {
         let wojtek = Person::wojtek();

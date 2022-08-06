@@ -292,6 +292,19 @@ mod tests {
     }
 
     #[test]
+    fn and_is_valid_lens_ref() {
+        let lens = Person::mother.then_mother().then_name();
+
+        let mut wojtek = Person::wojtek();
+        let name = lens.view_ref(&wojtek);
+        assert_eq!(name, "Lidia");
+
+        lens.set_mut(&mut wojtek, |name| *name = name.to_uppercase());
+        assert_eq!(wojtek.parents[0].name, "Miroslawa");
+        assert_eq!(wojtek.parents[0].parents[0].name, "LIDIA");
+    }
+
+    #[test]
     fn as_getter() {
         let mom = Person::mother.view(Person::olivier());
         assert_eq!(&mom.name, "Anne");

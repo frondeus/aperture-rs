@@ -224,6 +224,17 @@ L2: PrismMut<$r, L1::Variant> {
         self.0.impl_set_mut(source, |x| self.1.impl_set_mut(x, f.clone()));
     }
 }
+impl <L1, L2, S> PrismRef<AsPrism, S> for And<L1, L2, ($l, $r), (S, L1::Variant)>
+where
+L1: PrismRef<$l, S>,
+L2: PrismRef<$r, L1::Variant>,
+for<'a> L1::Variant: 'a
+{
+    fn impl_preview_ref<'a>(&self, source: &'a S) -> Option<&'a Self::Variant> {
+        self.0.impl_preview_ref(source)
+                .and_then(|x| self.1.impl_preview_ref(x))
+    }
+}
 
  )*};
 }
@@ -257,5 +268,16 @@ mod tests {
 
         prism.set_mut(&mut src_some, |x| *x = *x + 1);
         assert_eq!(src_some, Option::Some(Option::Some(5)));
+    }
+
+    #[test]
+    fn prism_and_prism_ref() {
+        let prism = Some.then(Some);
+
+        let src_some: Option<Option<u32>> = prism.review(4);
+        assert_eq!(src_some, Option::Some(Option::Some(4)));
+
+        let deep_some = prism.preview_ref(&src_some);
+        assert_eq!(deep_some, Option::Some(&4));
     }
 }

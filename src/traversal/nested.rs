@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use super::Traversal;
+use super::{Traversal, TraversalRef};
 use crate::prelude::AffineFold;
 
 pub struct NestedTraversal<As, I, T>
@@ -54,51 +54,89 @@ where
         }
     }
 }
-pub struct NestedAF<As, I, AF>
+
+pub struct NestedTraversalRef<'a, AsO, AsI, OUT, INN, S>
 where
-    I: Iterator,
-    AF: AffineFold<As, I::Item>,
+    OUT: TraversalRef<AsO, S>,
+    INN: TraversalRef<AsI, OUT::Item<'a>>,
+    S: 'a,
 {
-    outer: I,
-    inner: AF,
-    _as: PhantomData<As>,
+    outer: OUT::DRef<'a>,
+    inner: INN,
+    _as: PhantomData<&'a (AsI, AsO)>,
+    last: Option<INN::DRef<'a>>,
 }
-impl<As, I, AF> NestedAF<As, I, AF>
+
+impl<'a, AsO, AsI, OUT, INN, S> NestedTraversalRef<'a, AsO, AsI, OUT, INN, S>
 where
-    I: Iterator,
-    AF: AffineFold<As, I::Item>,
+    OUT: TraversalRef<AsO, S>,
+    INN: TraversalRef<AsI, OUT::Item<'a>>,
+    S: 'a,
 {
-    pub fn new(i: I, f: AF) -> Self {
+    pub fn new(outer: OUT::DRef<'a>, inner: INN) -> Self {
         Self {
-            inner: f,
-            outer: i,
+            outer,
+            inner,
             _as: PhantomData,
+            last: None,
         }
     }
 }
-impl<As, I, AF> Iterator for NestedAF<As, I, AF>
+
+impl<'a, AsO, AsI, OUT, INN, S> Iterator for NestedTraversalRef<'a, AsO, AsI, OUT, INN, S>
 where
-    I: Iterator,
-    AF: AffineFold<As, I::Item>,
+    OUT: TraversalRef<AsO, S>,
+    INN: TraversalRef<AsI, OUT::Item<'a>>,
+    S: 'a,
 {
-    type Item = AF::T;
+    type Item = &'a INN::Item<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        // loop {
-        //     if let Some(ref mut inner) = self.last {
-        //         match inner.next() {
-        //             elt @ Some(_) => return elt,
-        //             None => self.last = None,
-        //         }
-        //     }
-        //     match self.outer.next() {
-        //         None => return None,
-        //         Some(inner) => {
-        //             self.last = Some(self.inner.impl_fold(inner));
-        //         }
-        //     }
-        // }
-        let item = self.outer.next()?;
-        self.inner.preview(item)
+        loop {
+            if let Some(ref mut inner) = self.last {
+                match inner.next() {
+                    elt @ Some(_) => return elt,
+                    None => self.last = None,
+                }
+            }
+            match self.outer.next() {
+                None => return None,
+                Some(inner) => self.last = Some(self.inner.impl_fold_ref(inner)),
+            }
+        }
     }
 }
+
+// impl<'a, As, OUT, INN, T> Iterator for NestedTraversalRef<'a, T, As, OUT, INN>
+// where
+//     OUT: Iterator<Item = &'a T>,
+//     INN: TraversalRef<As, T>,
+//     INN::D: Iterator,
+//     T: 'a,
+//     OUT::Item: 'a,
+//     // <T as TraversalRef<As, I::Item>>::DRef<'a>: 'a,
+// {
+//     type Item = <<INN as Traversal<As, T>>::D as Iterator>::Item;
+//     // type Item = <INN as TraversalRef<As, T>>::Item<'a>;
+//     // type Item = u32;
+
+//     fn next(&mut self) -> Option<Self::Item> {
+//         // loop {
+//         // if let Some(ref mut inner) = self.last {
+//         //     match inner.next() {
+//         //         elt @ Some(_) => return elt,
+//         //         None => self.last = None,
+//         //     }
+//         // }
+//         // match self.outer.next() {
+//         //     Some(inner) => self.inner.impl_fold_ref(inner),
+//         //     None => return None,
+//         //     // None => return None,
+//         //     // Some(inner) => {
+//         //     //     self.last = Some(self.inner.impl_fold(inner));
+//         //     // }
+//         // }
+//         // }
+//         todo!()
+//     }
+// }

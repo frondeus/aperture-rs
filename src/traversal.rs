@@ -21,7 +21,7 @@ pub trait Traversal<As, S> // where
         F: Clone + FnMut(<Self::D as Iterator>::Item) -> <Self::D as Iterator>::Item;
 }
 
-#[cfg(feature = "gat")]
+// #[cfg(feature = "gat")]
 pub trait TraversalRef<As, S>: TraversalMut<As, S> {
     type Item<'a>: 'a
     where
@@ -87,7 +87,7 @@ where
     }
 }
 
-#[cfg(feature = "gat")]
+// #[cfg(feature = "gat")]
 impl<X, S> FoldRef<AsTraversal, S> for X
 where
     X: TraversalRef<AsTraversal, S>,
@@ -135,6 +135,31 @@ where
         F: Clone + FnMut(&mut <Self::D as Iterator>::Item),
     {
         self.0.impl_set_mut(source, |x| self.1.impl_set_mut(x, f.clone()))
+    }
+}
+impl<L1, L2, S> TraversalRef<AsTraversal, S>
+    for And<L1, L2, ($l, $r), (S, <L1::D as Iterator>::Item)>
+where
+    L1: TraversalMut<$l, S>,
+    L2: Clone + TraversalMut<$r, <L1::D as Iterator>::Item>,
+
+    L1: TraversalRef<$l, S>,
+    for<'a> L2: Clone + TraversalRef<$r, L1::Item<'a>>,
+    for<'a> S: 'a,
+{
+    type Item<'a> = <L2 as TraversalRef<$r, L1::Item<'a>>>::Item<'a>;
+
+    type DRef<'a> = nested::NestedTraversalRef<
+        'a,
+        $l,
+        $r,
+        L1,
+        L2,
+        S
+    >;
+
+    fn impl_fold_ref<'a>(&self, source: &'a S) -> Self::DRef<'a> {
+        nested::NestedTraversalRef::new(self.0.impl_fold_ref(source), self.1.clone())
     }
 }
  )*};
@@ -185,6 +210,13 @@ mod tests {
         lens.set_mut(&mut src, |x| *x = *x + 8);
         assert_eq!(src, vec![vec![1, 10, 3]]);
     }
+    #[test]
+    fn traversal_and_traversal_ref() {
+        let lens = Every.then(Filtered(|x: &i32| *x % 2 == 0));
+        let src = vec![vec![1, 2, 3]];
+        let res: Vec<_> = lens.traverse_ref(&src, |x| *x + 8).collect();
+        assert_eq!(res, vec![10]);
+    }
 
     #[test]
     fn and_is_valid_traversal() {
@@ -192,6 +224,14 @@ mod tests {
         let src = vec![vec![vec![1, 2, 3]]];
         let mut res = lens.traverse(src, |x: i32| x);
         assert_eq!(res.next(), Some(2))
+    }
+
+    #[test]
+    fn and_is_valid_traversal_ref() {
+        let lens = Every.then(Every).then(Filtered(|x: &i32| *x % 2 == 0));
+        let src = vec![vec![vec![1, 2, 3]]];
+        let mut res = lens.traverse_ref(&src, |x: &i32| x);
+        assert_eq!(res.next(), Some(&2))
     }
 
     #[test]

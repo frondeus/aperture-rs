@@ -65,20 +65,20 @@ where
     }
 }
 
-impl<X, S, T> GetterRef<AsGetter, S> for X
-where
-    X: for<'b> Getter<AsGetter, &'b S, T = &'b T>,
-    X: Getter<AsGetter, S, T = T>,
-{
-    fn view_ref<'a>(&self, source: &'a S) -> &'a T {
-        self.view(source)
-    }
+// impl<X, S, T> GetterRef<AsGetter, S> for X
+// where
+//     X: for<'b> Getter<AsGetter, &'b S, T = &'b T>,
+//     X: Getter<AsGetter, S, T = T>,
+// {
+//     fn view_ref<'a>(&self, source: &'a S) -> &'a T {
+//         self.view(source)
+//     }
 
-    #[doc(hidden)]
-    fn impl_preview_ref<'a>(&self, source: &'a S) -> Option<&'a Self::T> {
-        self.impl_preview(source)
-    }
-}
+//     #[doc(hidden)]
+//     fn impl_preview_ref<'a>(&self, source: &'a S) -> Option<&'a Self::T> {
+//         self.impl_preview(source)
+//     }
+// }
 
 macro_rules! impl_and {
  ($as: ident, $(($l:ident, $r:ident),)*) => { impl_and!(@ ($as, $as), $(($l, $r), ($r, $l),)*); };
@@ -94,6 +94,16 @@ where
         self.1.view(self.0.view(source))
     }
 }
+impl<L1, L2, S> GetterRef<AsGetter, S> for And<L1, L2, ($l, $r), (S, L1::T)>
+where
+    L1: GetterRef<$l, S>,
+    L2: GetterRef<$r, L1::T>,
+    for<'a> L1::T: 'a
+{
+    fn view_ref<'a>(&self, source: &'a S) -> &'a Self::T {
+        self.1.view_ref(self.0.view_ref(source))
+    }
+}
  )*};
 }
 
@@ -104,6 +114,26 @@ impl_and!(
     // (AsGetter, AsIso),
     // (AsLens,   AsRevPrism),
 );
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::prelude::unwrap::Unwrap;
+
+    #[test]
+    fn getter_and_getter() {
+        let test = Some(Some(4));
+
+        assert_eq!(Unwrap.then(Unwrap).view(test), 4);
+    }
+
+    #[test]
+    fn getter_and_getter_ref() {
+        let test = Some(Some(4));
+
+        assert_eq!(Unwrap.then(Unwrap).view_ref(&test), &4);
+    }
+}
 
 // impl<A1, A2, L1, L2, S> Getter<(A1, A2), S> for And<L1, L2>
 // where

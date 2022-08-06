@@ -141,7 +141,7 @@ where
     }
 }
 
-#[cfg(feature = "gat")]
+// #[cfg(feature = "gat")]
 impl<X, S> FoldRef<AsAffineTraversal, S> for X
 where
     X: AffineTraversalRef<AsAffineTraversal, S>,
@@ -194,6 +194,18 @@ where
         self.0.impl_set_mut(source, |x| self.1.impl_set_mut(x, f.clone()));
     }
 }
+impl<L1, L2, S> AffineTraversalRef<AsAffineTraversal, S>
+    for And<L1, L2, ($l, $r), (S, L1::O)>
+where
+    L1: AffineTraversalRef<$l, S>,
+    L2: AffineTraversalRef<$r, L1::O>,
+    for<'a> L1: 'a
+{
+    fn impl_preview_ref<'a>(&self, source: &'a S) -> Option<&'a Self::O> {
+        self.0.impl_preview_ref(source)
+                .and_then(|x| self.1.impl_preview_ref(x))
+    }
+}
  )*};
 }
 
@@ -240,6 +252,13 @@ mod tests {
             n.name = n.name.to_uppercase();
         });
         assert_eq!(&wojtek.parents[0].parents[0].name, "LIDIA");
+    }
+    #[test]
+    fn at_and_at_ref() {
+        let lens = PersonMotherAT.then(PersonMotherAT);
+        let wojtek = Person::wojtek();
+        let grandma = lens.map_opt_ref(&wojtek, |n| n.name.to_uppercase());
+        assert_eq!(grandma.unwrap(), "LIDIA");
     }
 
     #[test]

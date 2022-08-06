@@ -86,9 +86,11 @@ pub fn lens_derive(input: TokenStream) -> TokenStream {
             #(#impls)*
         }
         
-        pub trait #ext_name<S>: Lens<AsLens, S> + Sized {
+        pub trait #ext_name<S>: LensRef<AsLens, S> + Sized {
             #(#ext)*
         }
-        impl <L, S> #ext_name<S> for L where L: Lens<AsLens, S, View = #main_name> {}
+        // impl <L, S> #ext_name<S> for L where L: Lens<AsLens, S, View = #main_name> {}
+        impl <L, S> #ext_name<S> for L where L: LensRef<AsLens, S, View = #main_name> {}
+        // impl <L, S> #ext_name<S> for L where L: LensMut<AsLens, S, View = #main_name> {}
     })
 }

@@ -66,7 +66,7 @@ pub mod prelude {
 mod tests {
     use crate::{
         data::Person,
-        prelude::{every::Every, Then},
+        prelude::{every::Every, *},
         setter::Setter,
     };
 
@@ -74,8 +74,16 @@ mod tests {
     fn example() {
         let telescope = Person::parents.then(Every).then(Person::name);
 
-        let wojtek = telescope.set(Person::wojtek(), |x| x.to_uppercase());
+        let mut wojtek = telescope.set(Person::wojtek(), |x| x.to_uppercase());
         assert_eq!(wojtek.parents[0].name, "MIROSLAWA");
         assert_eq!(wojtek.parents[1].name, "ZENON");
+
+        telescope.set_mut(&mut wojtek, |x| *x = x.to_lowercase());
+        assert_eq!(wojtek.parents[0].name, "miroslawa");
+        assert_eq!(wojtek.parents[1].name, "zenon");
+
+        let mut iter = telescope.traverse_ref(&wojtek, |x| x.to_uppercase());
+        assert_eq!(iter.next().unwrap(), "MIROSLAWA");
+        assert_eq!(iter.next().unwrap(), "ZENON");
     }
 }

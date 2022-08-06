@@ -18,7 +18,7 @@ pub trait Fold<As, S> {
 //     fn fold_ref(&self, source: &'a S) -> Self::DRef;
 // }
 
-#[cfg(feature = "gat")]
+// #[cfg(feature = "gat")]
 pub trait FoldRef<As, S>
 where
     Self: Fold<As, S>,
@@ -60,6 +60,34 @@ macro_rules! impl_fold {
                 nested::NestedFold::new(self.0.fold(source), self.1.clone())
             }
         }
+        impl<L1, L2, S> FoldRef<AsFold, S> for And<L1, L2, ($l, $r), (S, <L1::D as Iterator>::Item)>
+        where
+            L1: Fold<$l, S>,
+            L1::D: Iterator,
+            L2: Fold<$r, <L1::D as Iterator>::Item>,
+            L2: Clone,
+            <L2 as Fold<$r, <L1::D as Iterator>::Item>>::D: Iterator,
+
+            L1: FoldRef<$l, S>,
+            for<'a> L2: FoldRef<$r, L1::Item<'a>>,
+            for<'a> <L2 as Fold<$r, L1::Item<'a> >>::D: Iterator,
+            for<'a> S: 'a
+        {
+            type Item<'a> = <L2 as FoldRef<$r, L1::Item<'a>>>::Item<'a>;
+
+            type DRef<'a> = nested::NestedFoldRef<
+                'a,
+                $l,
+                $r,
+                L1,
+                L2,
+                S
+            >;
+
+            fn fold_ref<'a>(&self, source: &'a S) -> Self::DRef<'a> {
+                nested::NestedFoldRef::new(self.0.fold_ref(source), self.1.clone())
+            }
+        }
 
     )*};
 }
@@ -97,6 +125,19 @@ mod tests {
         let grandparents = PersonParentsFold.then(PersonParentsFold);
 
         let mut iter = grandparents.fold(Person::wojtek());
+        assert_eq!(iter.next().unwrap().name, "Lidia");
+        assert_eq!(iter.next().unwrap().name, "Jerzy");
+        assert_eq!(iter.next().unwrap().name, "Helena");
+        assert_eq!(iter.next().unwrap().name, "Waclaw");
+        assert_eq!(iter.next(), None);
+    }
+
+    #[test]
+    fn fold_and_fold_ref() {
+        let grandparents = PersonParentsFold.then(PersonParentsFold);
+
+        let wojtek = Person::wojtek();
+        let mut iter = grandparents.fold_ref(&wojtek);
         assert_eq!(iter.next().unwrap().name, "Lidia");
         assert_eq!(iter.next().unwrap().name, "Jerzy");
         assert_eq!(iter.next().unwrap().name, "Helena");
