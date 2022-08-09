@@ -186,6 +186,27 @@ where
         self.preview_ref(source).into_iter()
     }
 }
+impl<X, S> AffineTraversalRef<AsLens, S> for X
+where
+    X: LensRef<AsLens, S>,
+{
+    fn impl_preview_ref<'a>(&self, source: &'a S) -> Option<&'a Self::O> {
+        self.impl_preview_ref(source)
+    }
+}
+impl<X, S> TraversalRef<AsLens, S> for X
+where
+    X: AffineTraversalRef<AsLens, S>,
+{
+    type DRef<'a> = std::option::IntoIter<&'a X::O>
+    where
+        <Self::D as Iterator>::Item: 'a,
+        S: 'a;
+
+    fn impl_fold_ref<'a>(&self, source: &'a S) -> Self::DRef<'a> {
+        self.impl_preview_ref(source).into_iter()
+    }
+}
 
 macro_rules! impl_and {
  ($as: ident, $(($l:ident, $r:ident),)*) => { impl_and!(@ ($as, $as), $(($l, $r), ($r, $l),)*); };

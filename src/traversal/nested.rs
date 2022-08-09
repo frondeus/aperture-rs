@@ -1,7 +1,6 @@
 use std::marker::PhantomData;
 
 use super::{Traversal, TraversalRef};
-use crate::prelude::AffineFold;
 
 pub struct NestedTraversal<As, I, T>
 where
@@ -58,8 +57,10 @@ where
 pub struct NestedTraversalRef<'a, AsO, AsI, OUT, INN, S>
 where
     OUT: TraversalRef<AsO, S>,
-    INN: TraversalRef<AsI, OUT::Item<'a>>,
+    INN: TraversalRef<AsI, <OUT::D as Iterator>::Item>,
     S: 'a,
+    <OUT::D as Iterator>::Item: 'a,
+    <INN::D as Iterator>::Item: 'a,
 {
     outer: OUT::DRef<'a>,
     inner: INN,
@@ -70,8 +71,10 @@ where
 impl<'a, AsO, AsI, OUT, INN, S> NestedTraversalRef<'a, AsO, AsI, OUT, INN, S>
 where
     OUT: TraversalRef<AsO, S>,
-    INN: TraversalRef<AsI, OUT::Item<'a>>,
+    INN: TraversalRef<AsI, <OUT::D as Iterator>::Item>,
     S: 'a,
+    <OUT::D as Iterator>::Item: 'a,
+    <INN::D as Iterator>::Item: 'a,
 {
     pub fn new(outer: OUT::DRef<'a>, inner: INN) -> Self {
         Self {
@@ -86,10 +89,12 @@ where
 impl<'a, AsO, AsI, OUT, INN, S> Iterator for NestedTraversalRef<'a, AsO, AsI, OUT, INN, S>
 where
     OUT: TraversalRef<AsO, S>,
-    INN: TraversalRef<AsI, OUT::Item<'a>>,
+    INN: TraversalRef<AsI, <OUT::D as Iterator>::Item>,
     S: 'a,
+    <OUT::D as Iterator>::Item: 'a,
+    <INN::D as Iterator>::Item: 'a,
 {
-    type Item = &'a INN::Item<'a>;
+    type Item = &'a <INN::D as Iterator>::Item;
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
@@ -106,37 +111,3 @@ where
         }
     }
 }
-
-// impl<'a, As, OUT, INN, T> Iterator for NestedTraversalRef<'a, T, As, OUT, INN>
-// where
-//     OUT: Iterator<Item = &'a T>,
-//     INN: TraversalRef<As, T>,
-//     INN::D: Iterator,
-//     T: 'a,
-//     OUT::Item: 'a,
-//     // <T as TraversalRef<As, I::Item>>::DRef<'a>: 'a,
-// {
-//     type Item = <<INN as Traversal<As, T>>::D as Iterator>::Item;
-//     // type Item = <INN as TraversalRef<As, T>>::Item<'a>;
-//     // type Item = u32;
-
-//     fn next(&mut self) -> Option<Self::Item> {
-//         // loop {
-//         // if let Some(ref mut inner) = self.last {
-//         //     match inner.next() {
-//         //         elt @ Some(_) => return elt,
-//         //         None => self.last = None,
-//         //     }
-//         // }
-//         // match self.outer.next() {
-//         //     Some(inner) => self.inner.impl_fold_ref(inner),
-//         //     None => return None,
-//         //     // None => return None,
-//         //     // Some(inner) => {
-//         //     //     self.last = Some(self.inner.impl_fold(inner));
-//         //     // }
-//         // }
-//         // }
-//         todo!()
-//     }
-// }

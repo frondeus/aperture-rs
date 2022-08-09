@@ -1,5 +1,6 @@
 use crate::prelude::*;
 
+#[derive(Debug, Default)]
 pub struct AsPrism;
 pub trait Prism<As, S> {
     type Variant;
@@ -164,7 +165,7 @@ where
     for<'a> X::O: 'a,
     for<'a> S: 'a,
 {
-    type Item<'a> = X::O;
+    // type Item<'a> = X::O;
 
     type DRef<'a> = std::option::IntoIter<&'a X::O>;
 
@@ -266,7 +267,7 @@ mod tests {
 
         let mut src_some: Option<Option<u32>> = prism.review(4);
 
-        prism.set_mut(&mut src_some, |x| *x = *x + 1);
+        prism.set_mut(&mut src_some, |x| *x += 1);
         assert_eq!(src_some, Option::Some(Option::Some(5)));
     }
 

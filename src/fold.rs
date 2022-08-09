@@ -2,6 +2,7 @@ use crate::prelude::*;
 
 #[derive(Debug, Default)]
 pub struct AsFold;
+
 pub trait Fold<As, S> {
     type D;
 

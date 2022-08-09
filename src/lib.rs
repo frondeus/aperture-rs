@@ -14,7 +14,11 @@
 #[cfg(test)]
 mod data;
 
-pub trait Optics<As, S> {}
+pub trait Optics<As: Default + std::fmt::Debug, S> {
+    fn is_optics(&self) -> As {
+        As::default()
+    }
+}
 // 0 degree - Basic blocks
 pub mod fold; // 23 = 1 + 11 * 2
 pub mod setter; // 11 = 1 + 5 * 2
@@ -82,8 +86,15 @@ mod tests {
         assert_eq!(wojtek.parents[0].name, "miroslawa");
         assert_eq!(wojtek.parents[1].name, "zenon");
 
-        let mut iter = telescope.traverse_ref(&wojtek, |x| x.to_uppercase());
-        assert_eq!(iter.next().unwrap(), "MIROSLAWA");
-        assert_eq!(iter.next().unwrap(), "ZENON");
+        let marker = telescope.is_optics();
+        assert_eq!(marker, AsTraversal);
+
+        let mut iter = telescope.fold_ref(&wojtek);
+        assert_eq!(iter.next().unwrap(), "miroslawa");
+        assert_eq!(iter.next().unwrap(), "zenon");
+
+        let mut iter = telescope.fold(wojtek);
+        assert_eq!(iter.next().unwrap(), "miroslawa");
+        assert_eq!(iter.next().unwrap(), "zenon");
     }
 }

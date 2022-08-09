@@ -1,5 +1,6 @@
 use crate::prelude::*;
 
+#[derive(Debug, Default)]
 pub struct AsGetter;
 pub trait Getter<As, S> {
     type T;

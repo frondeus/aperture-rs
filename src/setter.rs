@@ -1,5 +1,6 @@
 use crate::prelude::*;
 
+#[derive(Debug, Default)]
 pub struct AsSetter;
 pub trait Setter<As, S> {
     type O;

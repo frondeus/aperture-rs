@@ -121,7 +121,7 @@ where
     for<'a> X::O: 'a,
     for<'a> S: 'a,
 {
-    type Item<'a> = X::O;
+    // type Item<'a> = X::O;
 
     type DRef<'a> = std::option::IntoIter<&'a X::O>;
 

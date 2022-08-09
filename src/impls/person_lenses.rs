@@ -49,7 +49,7 @@ impl LensRef<AsLens, Person> for PersonMother {
     }
 
     fn impl_preview_ref<'a>(&self, source: &'a Person) -> Option<&'a Self::View> {
-        source.parents.iter().next()
+        source.parents.first()
     }
 }
 

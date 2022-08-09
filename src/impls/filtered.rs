@@ -37,7 +37,7 @@ where
         F: Clone + FnMut(&mut <Self::D as Iterator>::Item),
     {
         source.into_iter().for_each(|o| {
-            if (self.0.clone())(&o) {
+            if (self.0.clone())(o) {
                 f(o);
             }
         });
@@ -52,8 +52,6 @@ where
     for<'a> T: 'a,
     for<'a> S: 'a,
 {
-    type Item<'a> = T;
-
     type DRef<'a> = FilterRef<'a, T, Filter, <&'a S as IntoIterator>::IntoIter>;
 
     fn impl_fold_ref<'a>(&self, source: &'a S) -> Self::DRef<'a> {

@@ -40,11 +40,8 @@ where
     for<'a> &'a mut S: IntoIterator<Item = &'a mut T>,
     for<'a> &'a S: IntoIterator<Item = &'a T>,
     for<'a> T: 'a,
-    for<'a> S: 'a,
 {
-    type Item<'a> = T;
-
-    type DRef<'a> = <&'a S as IntoIterator>::IntoIter;
+    type DRef<'a> = <&'a S as IntoIterator>::IntoIter where S: 'a;
 
     fn impl_fold_ref<'a>(&self, source: &'a S) -> Self::DRef<'a> {
         source.into_iter()

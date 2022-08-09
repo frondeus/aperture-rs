@@ -32,7 +32,7 @@ impl AffineTraversalMut<AsAffineTraversal, Person> for PersonMotherAT {
 }
 impl AffineTraversalRef<AsAffineTraversal, Person> for PersonMotherAT {
     fn impl_preview_ref<'a>(&self, source: &'a Person) -> Option<&'a Self::O> {
-        source.parents.iter().next()
+        source.parents.first()
     }
 }
 

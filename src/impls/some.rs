@@ -81,8 +81,8 @@ mod tests {
     fn as_setter_mut() {
         let mut x = Option::Some(4);
         let mut y: Option<u32> = None;
-        Some.set_mut(&mut x, |x| *x = *x + 1);
-        Some.set_mut(&mut y, |x| *x = *x + 1);
+        Some.set_mut(&mut x, |x| *x += 1);
+        Some.set_mut(&mut y, |x| *x += 1);
         assert_eq!(x, Option::Some(5));
         assert_eq!(y, None);
     }
