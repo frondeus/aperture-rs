@@ -213,8 +213,8 @@ impl_and!(
     AsAffineTraversal,
     (AsAffineTraversal, AsLens),
     (AsAffineTraversal, AsPrism),
-    // (AsAffineTraversal, AsIso),
     (AsLens, AsPrism),
+    // (AsAffineTraversal, AsIso),
 );
 
 #[cfg(test)]
@@ -223,12 +223,12 @@ mod tests {
     use crate::{
         data::Person,
         prelude::{
-            every::Every,
             person_af::PersonMotherAF,
             person_at::{PersonMotherAT, PersonParentsAT},
             person_folds::PersonParentsFold,
             person_setters::PersonNameSetter,
         },
+        std::Every,
     };
 
     #[test]

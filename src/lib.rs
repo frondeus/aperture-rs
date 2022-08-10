@@ -14,7 +14,7 @@
 #[cfg(test)]
 mod data;
 
-pub trait Optics<As: Default + std::fmt::Debug, S> {
+pub trait Optics<As: Default + ::std::fmt::Debug, S> {
     fn is_optics(&self) -> As {
         As::default()
     }
@@ -43,23 +43,27 @@ pub mod prism; // 3
 // pub mod iso; // 1
 
 // Combinators
+#[cfg(test)]
 pub mod impls;
+pub mod std;
 pub mod then;
 
 pub mod prelude {
     #[cfg(feature = "derive")]
     pub use lenses_derive::*;
 
+    #[cfg(test)]
+    pub use crate::impls::*;
     pub use crate::{
         affine_fold::*,
         affine_traversal::*,
         fold::*,
         getter::*,
-        impls::*,
         lens::*,
         prism::*,
         review::*,
         setter::*,
+        std::{_Err, _None, _Ok, _Some},
         then::*,
         traversal::*,
         Optics,
@@ -69,9 +73,10 @@ pub mod prelude {
 #[cfg(test)]
 mod tests {
     use crate::{
-        data::Person,
-        prelude::{every::Every, *},
+        data::{Person, SomeNestedStructure, SomeStructure},
+        prelude::*,
         setter::Setter,
+        std::{Every, _Err, _Ok},
     };
 
     #[test]
@@ -96,5 +101,49 @@ mod tests {
         let mut iter = telescope.fold(wojtek);
         assert_eq!(iter.next().unwrap(), "miroslawa");
         assert_eq!(iter.next().unwrap(), "zenon");
+    }
+
+    #[test]
+    fn example_2() {
+        let test = SomeNestedStructure::test();
+
+        let telescope = SomeNestedStructure::inner
+            .then(Every)
+            .then(SomeStructure::person_opt)
+            .then(_Some)
+            .then(Person::name);
+
+        let mut names = telescope.fold_ref(&test);
+        assert_eq!(names.next().unwrap(), "Olivier");
+        assert_eq!(names.next(), None);
+
+        let telescope = SomeNestedStructure::inner
+            .then(Every)
+            .then(SomeStructure::person_res)
+            .then(_Err);
+
+        let mut errors = telescope.fold_ref(&test);
+        assert_eq!(errors.next().unwrap(), "String");
+        assert_eq!(errors.next(), None);
+
+        let telescope = SomeNestedStructure::inner
+            .then(Every)
+            .then(SomeStructure::person_res)
+            .then(_Ok)
+            .then(Person::name);
+
+        fn impl_part<As, S, T>(telescope: T, test: &S)
+        where
+            for<'a> T: FoldRef<As, S, Item<'a> = String>,
+            T::D: Iterator<Item = String>,
+        {
+            // Note, that the function does not know from where the data comes from,
+            // what is data structure, nor how the telescope looks like
+            // All it cares that the telescope returns an iterator of &String.
+            let mut errors = telescope.fold_ref(test);
+            assert_eq!(errors.next().unwrap(), "Wojtek");
+            assert_eq!(errors.next(), None);
+        }
+        impl_part(telescope, &test)
     }
 }

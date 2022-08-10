@@ -114,11 +114,11 @@ mod tests {
     use crate::{
         data::Person,
         prelude::{
-            every::Every,
             person_af::PersonMotherAF,
             person_at::PersonMotherAT,
             person_folds::{PersonGrandParentsFold, PersonParentsFold},
         },
+        std::Every,
     };
 
     #[test]

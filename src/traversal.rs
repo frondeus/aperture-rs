@@ -186,13 +186,12 @@ mod tests {
     use crate::{
         data::Person,
         prelude::{
-            every::Every,
-            filtered::Filtered,
             person_at::PersonMotherAT,
             person_folds::PersonParentsFold,
             person_setters::PersonNameSetter,
             Then,
         },
+        std::{Every, Filtered},
     };
 
     #[test]

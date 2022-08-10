@@ -25,6 +25,11 @@ pub fn prism_derive(input: DeriveInput) -> TokenStream {
             } else {
                 quote!( #main_name::#pascal_name => Some(()))
             };
+            let preview_ref = if ty.is_some() {
+                quote!( #main_name::#pascal_name(t) => Some(t) )
+            } else {
+                quote!( #main_name::#pascal_name => Some(&()))
+            };
             let review = if ty.is_some() {
                 quote!( #main_name::#pascal_name(variant) )
             } else {
@@ -35,10 +40,16 @@ pub fn prism_derive(input: DeriveInput) -> TokenStream {
             } else {
                 quote!()
             };
+            let mut_set = if ty.is_some() {
+                quote!( #main_name::#pascal_name(variant) => f(variant), )
+            } else {
+                quote!()
+            };
             // let ty = &v.fields
             let prism = quote_spanned! { v.span() =>
                 #[derive(Clone, Copy)]
                 pub struct #name;
+                #[allow(unused_variables, unused_mut)]
                 impl Prism<AsPrism, #main_name> for #name {
                     type Variant = #variant_ty;
 
@@ -60,6 +71,29 @@ pub fn prism_derive(input: DeriveInput) -> TokenStream {
                             a => a
                         }
                     }
+                 }
+
+                #[allow(unused_variables, unused_mut)]
+                 impl PrismMut<AsPrism, #main_name> for #name {
+                     fn impl_set_mut<F>(&self, source: &mut #main_name, mut f: F)
+                     where
+                         F: Clone + FnMut(&mut Self::Variant),
+                     {
+                         match source {
+                            #mut_set
+                             _ => ()
+                         };
+                     }
+                 }
+
+                #[allow(unused_variables, unused_mut)]
+                 impl PrismRef<AsPrism, #main_name> for #name {
+                     fn impl_preview_ref<'a>(&self, source: &'a #main_name) -> Option<&'a Self::Variant> {
+                         match source {
+                             #preview_ref,
+                             _ => None
+                         }
+                     }
                  }
             };
 

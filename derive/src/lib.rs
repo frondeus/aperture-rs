@@ -10,7 +10,7 @@ mod prisms;
 pub fn prism_derive(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     let res = prisms::prism_derive(input);
-    dbg!(&res.to_string());
+    // dbg!(&res.to_string());
     TokenStream::from(res)
 }
 

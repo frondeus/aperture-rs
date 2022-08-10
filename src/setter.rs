@@ -93,10 +93,10 @@ mod tests {
     use crate::{
         data::Person,
         prelude::{
-            every::Every,
             person_at::PersonMotherAT,
             person_setters::{PersonMotherSetter, PersonNameSetter, PersonParentsSetter},
         },
+        std::Every,
     };
 
     #[test]
