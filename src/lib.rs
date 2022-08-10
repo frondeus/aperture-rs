@@ -105,7 +105,7 @@ mod tests {
 
     #[test]
     fn example_2() {
-        let test = SomeNestedStructure::test();
+        let mut test = SomeNestedStructure::test();
 
         let telescope = SomeNestedStructure::inner
             .then(Every)
@@ -144,6 +144,26 @@ mod tests {
             assert_eq!(errors.next().unwrap(), "Wojtek");
             assert_eq!(errors.next(), None);
         }
-        impl_part(telescope, &test)
+        impl_part(telescope, &test);
+
+        let telescope = SomeNestedStructure::inner
+            .then(Every)
+            .then(SomeStructure::person_res)
+            .then(_Ok)
+            .then(Person::name);
+
+        fn impl_part_mut<As, S, T>(telescope: T, test: &mut S)
+        where
+            T: SetterMut<As, S> + Setter<As, S, O = String>,
+        {
+            // Note, that the function does not know from where the data comes from,
+            // what is data structure, nor how the telescope looks like
+            // All it cares that the telescope allows to operate on &mut String.
+            // It doesn't even know if this going to be a single string or a set! (And it doesn't have to)
+            telescope.set_mut(test, |x: &mut String| {
+                *x = x.to_uppercase();
+            });
+        }
+        impl_part_mut(telescope, &mut test);
     }
 }
