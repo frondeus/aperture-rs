@@ -9,6 +9,12 @@ pub struct Person {
     pub parents: Vec<Person>,
 }
 
+#[derive(Clone, Debug, PartialEq, Prism)]
+pub enum TestEnum {
+    V1(String),
+    V2,
+}
+
 impl Person {
     pub fn olivier() -> Person {
         Person {

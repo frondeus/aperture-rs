@@ -248,7 +248,7 @@ impl_and!(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::prelude::some::Some;
+    use crate::{data::TestEnum, prelude::some::Some};
 
     #[test]
     fn prism_and_prism() {
@@ -280,5 +280,58 @@ mod tests {
 
         let deep_some = prism.preview_ref(&src_some);
         assert_eq!(deep_some, Option::Some(&4));
+    }
+
+    #[test]
+    fn derived_prism_preview() {
+        let prism = TestEnum::v1;
+        let prism_b = TestEnum::v2;
+
+        let a = TestEnum::V1("Foo".into());
+        let b = TestEnum::V2;
+
+        let previewed = prism.preview(a);
+        assert_eq!(previewed, Option::Some("Foo".to_string()));
+
+        let previewed = prism.preview(b);
+        assert_eq!(previewed, None);
+
+        let a = TestEnum::V1("Foo".into());
+        let b = TestEnum::V2;
+
+        let previewed = prism_b.preview(a);
+        assert_eq!(previewed, Option::None);
+
+        let previewed = prism_b.preview(b);
+        assert_eq!(previewed, Option::Some(()));
+    }
+
+    #[test]
+    fn derived_prism_review() {
+        let prism = TestEnum::v1;
+        let prism_b = TestEnum::v2;
+
+        let a: String = "Foo".into();
+        let b = ();
+
+        let reviewed = prism.review(a.clone());
+        assert_eq!(reviewed, TestEnum::V1(a));
+
+        let reviewed = prism_b.review(b);
+        assert_eq!(reviewed, TestEnum::V2);
+    }
+
+    #[test]
+    fn derived_prism_set() {
+        let prism = TestEnum::v1;
+
+        let a = TestEnum::V1("Foo".into());
+        let b = TestEnum::V2;
+
+        let new_a = prism.set(a, |x| x.to_uppercase());
+        assert_eq!(new_a, TestEnum::V1("FOO".to_string()));
+
+        let new_b = prism.set(b, |x| x.to_uppercase());
+        assert_eq!(new_b, TestEnum::V2);
     }
 }
