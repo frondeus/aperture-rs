@@ -22,6 +22,7 @@ pub fn lens_derive(input: DeriveInput) -> TokenStream {
                     let lens = quote_spanned! {f.span()=>
 
                         #[derive(Clone, Copy)]
+                        #[allow(non_camel_case_types)]
                         pub struct #name;
                         impl Lens<AsLens, #main_name> for #name {
                             type View = #ty;
@@ -77,6 +78,7 @@ pub fn lens_derive(input: DeriveInput) -> TokenStream {
         #(#lenses)*
     
         #[allow(non_upper_case_globals)]
+        #[allow(dead_code)]
         impl<#impl_generics> #main_name #ty_generics #where_clause {
             #(#impls)*
         }

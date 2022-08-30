@@ -2,8 +2,10 @@ use crate::prelude::*;
 
 #[derive(Debug, Default)]
 pub struct AsAffineTraversal;
+
 pub trait AffineTraversal<As, S> {
     type O;
+
     fn map_opt<T, F>(&self, source: S, f: F) -> Option<T>
     where
         F: FnOnce(Self::O) -> T,

@@ -260,6 +260,7 @@ mod tests {
     use crate::{
         data::{Person, PersonLensesExt as _},
         prelude::person_lenses::PersonLensesExt,
+        std::Every,
     };
 
     #[test]
@@ -270,13 +271,12 @@ mod tests {
 
     #[test]
     fn lens_and_lens() {
-        // let lens = Person::mother.then(Person::name);
-        let lens = Person::mother.then_name();
+        let telescope = Person::mother.then_name();
 
-        let name = lens.view(Person::olivier());
+        let name = telescope.view(Person::olivier());
         assert_eq!(name, "Anne");
 
-        let olivier = lens.set(Person::olivier(), |name| name.to_uppercase());
+        let olivier = telescope.set(Person::olivier(), |name| name.to_uppercase());
         assert_eq!(olivier.parents[0].name, "ANNE");
     }
 
@@ -298,6 +298,16 @@ mod tests {
 
         let name = lens.view_ref(&wojtek);
         assert_eq!(name, "Miroslawa");
+    }
+
+    #[test]
+    fn telescope() {
+        let telescope = Person::mother.then_parents().then(Every).then(Person::name);
+
+        let wojtek = Person::wojtek();
+
+        let mut iter = telescope.fold_ref(&wojtek);
+        assert_eq!(iter.next().unwrap(), "Lidia");
     }
 
     #[test]

@@ -1,15 +1,5 @@
-// #![feature(unboxed_closures, fn_traits, type_alias_impl_trait)]
 #![cfg_attr(feature = "gat", feature(generic_associated_types))]
-// #![allow(unused_imports)]
 #![deny(clippy::all)]
-// #![deny(clippy::pedantic)]
-
-// mod sealed {
-//     pub trait Sealed<S, A> {}
-// }
-// pub mod identity;
-// pub mod lazy;
-// pub mod method;
 
 #[cfg(test)]
 mod data;
@@ -20,27 +10,27 @@ pub trait Optics<As: Default + ::std::fmt::Debug, S> {
     }
 }
 // 0 degree - Basic blocks
-pub mod fold; // 23 = 1 + 11 * 2
-pub mod setter; // 11 = 1 + 5 * 2
+pub mod fold;
+pub mod setter;
 
 // 1st degree
-pub mod affine_fold; // 21 = 1 + 10 * 2
-pub mod traversal; // 9 = 1 + 4 * 2
+pub mod affine_fold;
+pub mod traversal;
 
 // 2nd degree
-pub mod affine_traversal; // known as Optional 9 = 1 + 4 * 2
-pub mod getter; // 9 = 1 + 4 * 2
-pub mod review; // 9 = 1 + 4 * 2
+pub mod affine_traversal; // known as Optional
+pub mod getter;
+pub mod review;
 
 // 3rd degree - Complex
-pub mod lens; // 3 = 1 + 1 * 2
-pub mod prism; // 3
+pub mod lens;
+pub mod prism;
 
-// pub mod rev_lens; // 3
-// pub mod rev_prism; // 3
+// pub mod rev_lens;
+// pub mod rev_prism;
 
 // 4th degree
-// pub mod iso; // 1
+// pub mod iso;
 
 // Combinators
 #[cfg(test)]
@@ -50,7 +40,7 @@ pub mod then;
 
 pub mod prelude {
     #[cfg(feature = "derive")]
-    pub use lenses_derive::*;
+    pub use aperture_derive::*;
 
     #[cfg(test)]
     pub use crate::impls::*;
@@ -165,5 +155,7 @@ mod tests {
             });
         }
         impl_part_mut(telescope, &mut test);
+        dbg!(&test);
+        // todo!();
     }
 }

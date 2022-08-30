@@ -2,6 +2,7 @@ use crate::prelude::*;
 
 #[derive(Debug, Default)]
 pub struct AsAffineFold;
+
 pub trait AffineFold<As, S> {
     type T;
     fn preview(&self, source: S) -> Option<Self::T>;

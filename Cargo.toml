@@ -1,5 +1,5 @@
 [package]
-name = "lenses"
+name = "aperture"
 version = "0.1.0"
 edition = "2021"
 
@@ -9,8 +9,8 @@ members = ["derive", "."]
 
 [features]
 default = ["derive", "gat"]
-derive = ["dep:lenses-derive"]
+derive = ["dep:aperture-derive"]
 gat = []
 
 [dependencies]
-lenses-derive = { path = "derive", optional = true }
+aperture-derive = { path = "derive", optional = true }

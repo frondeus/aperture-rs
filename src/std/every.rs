@@ -102,7 +102,7 @@ mod tests {
     fn as_setter() {
         let test: Vec<String> = vec!["foo".into(), "bar".into()];
 
-        let new_test = Every.set(test, |t| t.to_uppercase());
+        let new_test: Vec<String> = Every.set(test, |t| t.to_uppercase());
         let mut iter = new_test.into_iter();
         assert_eq!(iter.next().unwrap(), "FOO");
         assert_eq!(iter.next().unwrap(), "BAR");

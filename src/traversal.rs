@@ -2,9 +2,9 @@ use crate::prelude::*;
 
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct AsTraversal;
-pub trait Traversal<As, S> // where
-{
-    type D: Iterator; // = S::IntoIter;
+
+pub trait Traversal<As, S> {
+    type D: Iterator;
     fn traverse<F, T>(&self, source: S, f: F) -> std::iter::Map<Self::D, F>
     where
         F: FnMut(<Self::D as Iterator>::Item) -> T,

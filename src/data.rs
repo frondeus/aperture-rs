@@ -17,6 +17,7 @@ pub enum TestEnum {
 }
 
 #[derive(Clone, Debug, PartialEq, Lens)]
+#[allow(dead_code)]
 pub struct SomeStructure {
     pub person: Person,
     pub person_opt: Option<Person>,
@@ -27,17 +28,6 @@ pub struct SomeStructure {
 #[derive(Clone, Debug, PartialEq, Lens)]
 pub struct SomeNestedStructure {
     pub inner: Vec<SomeStructure>,
-}
-
-impl SomeStructure {
-    pub fn test() -> Self {
-        Self {
-            person: Person::wojtek(),
-            person_opt: Some(Person::olivier()),
-            person_res: Err("String".into()),
-            persons: vec![Person::wojtek(), Person::olivier()],
-        }
-    }
 }
 
 impl SomeNestedStructure {
