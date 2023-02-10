@@ -40,13 +40,12 @@ pub mod prelude {
     #[cfg(feature = "derive")]
     pub use aperture_derive::*;
 
-    #[cfg(test)]
-    pub use crate::impls::*;
     pub use crate::{
         affine_fold::*,
         affine_traversal::*,
         fold::*,
         getter::*,
+        impls::*,
         lens::*,
         prism::*,
         review::*,
