@@ -2,7 +2,7 @@ use crate::prelude::*;
 
 #[derive(Debug, Default)]
 pub struct AsPrism;
-pub trait Prism<As, S> {
+pub trait Prism<S, As = AsPrism> {
     type Variant;
     #[doc(hidden)]
     fn impl_preview(&self, source: S) -> Option<Self::Variant>;
@@ -14,22 +14,22 @@ pub trait Prism<As, S> {
         F: Clone + FnMut(Self::Variant) -> Self::Variant;
 }
 
-pub trait PrismMut<As, S>: Prism<As, S> {
+pub trait PrismMut<S, As = AsPrism>: Prism<S, As> {
     #[doc(hidden)]
     fn impl_set_mut<F>(&self, source: &mut S, f: F)
     where
         F: Clone + FnMut(&mut Self::Variant);
 }
-pub trait PrismRef<As, S>: PrismMut<As, S> {
+pub trait PrismRef<S, As = AsPrism>: PrismMut<S, As> {
     #[doc(hidden)]
     fn impl_preview_ref<'a>(&self, source: &'a S) -> Option<&'a Self::Variant>;
 }
 
-impl<S, X> Optics<AsPrism, S> for X where X: Prism<AsPrism, S> {}
+impl<S, X> Optics<S, AsPrism> for X where X: Prism<S, AsPrism> {}
 
-impl<X, S> Review<AsPrism, S> for X
+impl<X, S> Review<S, AsPrism> for X
 where
-    X: Prism<AsPrism, S>,
+    X: Prism<S>,
 {
     type T = X::Variant;
 
@@ -38,9 +38,9 @@ where
     }
 }
 
-impl<X, S> AffineTraversal<AsPrism, S> for X
+impl<X, S> AffineTraversal<S, AsPrism> for X
 where
-    X: Prism<AsPrism, S>,
+    X: Prism<S>,
 {
     type O = X::Variant;
 
@@ -56,9 +56,9 @@ where
     }
 }
 
-impl<X, S> AffineFold<AsPrism, S> for X
+impl<X, S> AffineFold<S, AsPrism> for X
 where
-    X: AffineTraversal<AsPrism, S>,
+    X: AffineTraversal<S, AsPrism>,
 {
     type T = X::O;
 
@@ -67,9 +67,9 @@ where
     }
 }
 
-impl<X, S> Fold<AsPrism, S> for X
+impl<X, S> Fold<S, AsPrism> for X
 where
-    X: AffineFold<AsPrism, S>,
+    X: AffineFold<S, AsPrism>,
 {
     type D = std::option::IntoIter<X::T>;
 
@@ -78,9 +78,9 @@ where
     }
 }
 
-impl<X, S> Traversal<AsPrism, S> for X
+impl<X, S> Traversal<S, AsPrism> for X
 where
-    X: AffineTraversal<AsPrism, S>,
+    X: AffineTraversal<S, AsPrism>,
 {
     type D = std::option::IntoIter<X::O>;
 
@@ -96,9 +96,9 @@ where
     }
 }
 
-impl<X, S> Setter<AsPrism, S> for X
+impl<X, S> Setter<S, AsPrism> for X
 where
-    X: Traversal<AsPrism, S>,
+    X: Traversal<S, AsPrism>,
 {
     type O = <X::D as Iterator>::Item;
 
@@ -109,9 +109,9 @@ where
         self.impl_set(source, f)
     }
 }
-impl<X, S> AffineTraversalMut<AsPrism, S> for X
+impl<X, S> AffineTraversalMut<S, AsPrism> for X
 where
-    X: PrismMut<AsPrism, S>,
+    X: PrismMut<S>,
 {
     fn impl_set_mut<F>(&self, source: &mut S, f: F)
     where
@@ -120,9 +120,9 @@ where
         self.impl_set_mut(source, f);
     }
 }
-impl<X, S> TraversalMut<AsPrism, S> for X
+impl<X, S> TraversalMut<S, AsPrism> for X
 where
-    X: AffineTraversalMut<AsPrism, S>,
+    X: AffineTraversalMut<S, AsPrism>,
 {
     fn impl_set_mut<F>(&self, source: &mut S, f: F)
     where
@@ -131,9 +131,9 @@ where
         self.impl_set_mut(source, f);
     }
 }
-impl<X, S> SetterMut<AsPrism, S> for X
+impl<X, S> SetterMut<S, AsPrism> for X
 where
-    X: TraversalMut<AsPrism, S>,
+    X: TraversalMut<S, AsPrism>,
 {
     fn set_mut<F>(&self, source: &mut S, f: F)
     where
@@ -143,25 +143,25 @@ where
     }
 }
 
-impl<X, S> AffineTraversalRef<AsPrism, S> for X
+impl<X, S> AffineTraversalRef<S, AsPrism> for X
 where
-    X: PrismRef<AsPrism, S>,
+    X: PrismRef<S>,
 {
     fn impl_preview_ref<'a>(&self, source: &'a S) -> Option<&'a Self::O> {
         self.impl_preview_ref(source)
     }
 }
-impl<X, S> AffineFoldRef<AsPrism, S> for X
+impl<X, S> AffineFoldRef<S, AsPrism> for X
 where
-    X: AffineTraversalRef<AsPrism, S>,
+    X: AffineTraversalRef<S, AsPrism>,
 {
     fn preview_ref<'a>(&self, source: &'a S) -> Option<&'a Self::T> {
         self.impl_preview_ref(source)
     }
 }
-impl<X, S> TraversalRef<AsPrism, S> for X
+impl<X, S> TraversalRef<S, AsPrism> for X
 where
-    X: AffineTraversalRef<AsPrism, S>,
+    X: AffineTraversalRef<S, AsPrism>,
     for<'a> X::O: 'a,
     for<'a> S: 'a,
 {
@@ -173,9 +173,9 @@ where
         self.impl_preview_ref(source).into_iter()
     }
 }
-impl<X, S> FoldRef<AsPrism, S> for X
+impl<X, S> FoldRef<S, AsPrism> for X
 where
-    X: AffineFoldRef<AsPrism, S>,
+    X: AffineFoldRef<S, AsPrism>,
     for<'a> X::T: 'a,
     for<'a> S: 'a,
 {
@@ -191,10 +191,10 @@ where
 macro_rules! impl_and {
  ($as: ident, $(($l:ident, $r:ident),)*) => { impl_and!(@ ($as, $as), $(($l, $r), ($r, $l),)*); };
  (@ $(($l:ident, $r:ident),)*) => {$(
-impl <L1, L2, S> Prism<AsPrism, S> for And<L1, L2, ($l, $r), (S, L1::Variant)>
+impl <L1, L2, S> Prism<S> for And<L1, L2, ($l, $r), (S, L1::Variant)>
 where
-L1: Prism<$l, S>,
-L2: Prism<$r, L1::Variant> {
+L1: Prism< S, $l>,
+L2: Prism< L1::Variant, $r> {
     type Variant = L2::Variant;
 
     fn impl_preview(&self, source: S) -> Option<Self::Variant> {
@@ -214,10 +214,10 @@ L2: Prism<$r, L1::Variant> {
         self.0.impl_set(source, |x| self.1.impl_set(x, f.clone()))
     }
 }
-impl <L1, L2, S> PrismMut<AsPrism, S> for And<L1, L2, ($l, $r), (S, L1::Variant)>
+impl <L1, L2, S> PrismMut<S> for And<L1, L2, ($l, $r), (S, L1::Variant)>
 where
-L1: PrismMut<$l, S>,
-L2: PrismMut<$r, L1::Variant> {
+L1: PrismMut<S, $l>,
+L2: PrismMut<L1::Variant, $r> {
     fn impl_set_mut<F>(&self, source: &mut S, f: F)
     where
         F: Clone + FnMut(&mut Self::Variant),
@@ -225,10 +225,10 @@ L2: PrismMut<$r, L1::Variant> {
         self.0.impl_set_mut(source, |x| self.1.impl_set_mut(x, f.clone()));
     }
 }
-impl <L1, L2, S> PrismRef<AsPrism, S> for And<L1, L2, ($l, $r), (S, L1::Variant)>
+impl <L1, L2, S> PrismRef<S> for And<L1, L2, ($l, $r), (S, L1::Variant)>
 where
-L1: PrismRef<$l, S>,
-L2: PrismRef<$r, L1::Variant>,
+L1: PrismRef< S, $l>,
+L2: PrismRef< L1::Variant, $r>,
 for<'a> L1::Variant: 'a
 {
     fn impl_preview_ref<'a>(&self, source: &'a S) -> Option<&'a Self::Variant> {

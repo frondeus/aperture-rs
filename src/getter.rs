@@ -2,17 +2,17 @@ use crate::prelude::*;
 
 #[derive(Debug, Default)]
 pub struct AsGetter;
-pub trait Getter<As, S> {
+pub trait Getter<S, As = AsGetter> {
     type T;
-    fn view(&self, source: S) -> <Self as Getter<As, S>>::T;
+    fn view(&self, source: S) -> <Self as Getter<S, As>>::T;
 
     #[doc(hidden)]
     fn impl_preview(&self, source: S) -> Option<Self::T> {
         Some(self.view(source))
     }
 }
-pub trait GetterRef<As, S>: Getter<As, S> {
-    fn view_ref<'a>(&self, source: &'a S) -> &'a <Self as Getter<As, S>>::T;
+pub trait GetterRef<S, As = AsGetter>: Getter<S, As> {
+    fn view_ref<'a>(&self, source: &'a S) -> &'a <Self as Getter<S, As>>::T;
 
     #[doc(hidden)]
     fn impl_preview_ref<'a>(&self, source: &'a S) -> Option<&'a Self::T> {
@@ -20,11 +20,11 @@ pub trait GetterRef<As, S>: Getter<As, S> {
     }
 }
 
-impl<S, X> Optics<AsGetter, S> for X where X: Getter<AsGetter, S> {}
+impl<S, X> Optics<S, AsGetter> for X where X: Getter<S> {}
 
-impl<X, S> AffineFold<AsGetter, S> for X
+impl<X, S> AffineFold<S, AsGetter> for X
 where
-    X: Getter<AsGetter, S>,
+    X: Getter<S>,
 {
     type T = X::T;
 
@@ -32,9 +32,9 @@ where
         self.impl_preview(source)
     }
 }
-impl<X, S> Fold<AsGetter, S> for X
+impl<X, S> Fold<S, AsGetter> for X
 where
-    X: AffineFold<AsGetter, S>,
+    X: AffineFold<S, AsGetter>,
 {
     type D = std::option::IntoIter<X::T>;
 
@@ -43,17 +43,17 @@ where
     }
 }
 
-impl<X, S> AffineFoldRef<AsGetter, S> for X
+impl<X, S> AffineFoldRef<S, AsGetter> for X
 where
-    X: GetterRef<AsGetter, S>,
+    X: GetterRef<S>,
 {
     fn preview_ref<'a>(&self, source: &'a S) -> Option<&'a Self::T> {
         self.impl_preview_ref(source)
     }
 }
-impl<X, S> FoldRef<AsGetter, S> for X
+impl<X, S> FoldRef<S, AsGetter> for X
 where
-    X: AffineFoldRef<AsGetter, S>,
+    X: AffineFoldRef<S, AsGetter>,
     for<'a> X::T: 'a,
     for<'a> S: 'a,
 {
@@ -84,21 +84,21 @@ where
 macro_rules! impl_and {
  ($as: ident, $(($l:ident, $r:ident),)*) => { impl_and!(@ ($as, $as), $(($l, $r), ($r, $l),)*); };
  (@ $(($l:ident, $r:ident),)*) => {$(
-impl<L1, L2, S> Getter<AsGetter, S> for And<L1, L2, ($l, $r), (S, L1::T)>
+impl<L1, L2, S> Getter<S> for And<L1, L2, ($l, $r), (S, L1::T)>
 where
-    L1: Getter<$l, S>,
-    L2: Getter<$r, L1::T>,
+    L1: Getter< S, $l>,
+    L2: Getter< L1::T, $r>,
 {
     type T = L2::T;
 
-    fn view(&self, source: S) -> <Self as Getter<AsGetter, S>>::T {
+    fn view(&self, source: S) -> <Self as Getter<S>>::T {
         self.1.view(self.0.view(source))
     }
 }
-impl<L1, L2, S> GetterRef<AsGetter, S> for And<L1, L2, ($l, $r), (S, L1::T)>
+impl<L1, L2, S> GetterRef<S> for And<L1, L2, ($l, $r), (S, L1::T)>
 where
-    L1: GetterRef<$l, S>,
-    L2: GetterRef<$r, L1::T>,
+    L1: GetterRef< S, $l>,
+    L2: GetterRef< L1::T, $r>,
     for<'a> L1::T: 'a
 {
     fn view_ref<'a>(&self, source: &'a S) -> &'a Self::T {

@@ -2,7 +2,7 @@ use crate::prelude::*;
 
 #[derive(Default, Debug, Clone)]
 pub struct First;
-impl<S> AffineTraversal<AsAffineTraversal, S> for First
+impl<S> AffineTraversal<S> for First
 where
     S: IntoIterator + FromIterator<S::Item>,
 {

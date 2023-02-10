@@ -5,7 +5,7 @@ use super::{Fold, FoldRef};
 pub struct NestedFold<As, I, F>
 where
     I: Iterator,
-    F: Fold<As, I::Item>,
+    F: Fold<I::Item, As>,
     F::D: Iterator,
 {
     outer: I,
@@ -16,7 +16,7 @@ where
 impl<As, I, F> NestedFold<As, I, F>
 where
     I: Iterator,
-    F: Fold<As, I::Item>,
+    F: Fold<I::Item, As>,
     F::D: Iterator,
 {
     pub fn new(i: I, f: F) -> Self {
@@ -31,10 +31,10 @@ where
 impl<As, I, F> Iterator for NestedFold<As, I, F>
 where
     I: Iterator,
-    F: Fold<As, I::Item>,
+    F: Fold<I::Item, As>,
     F::D: Iterator,
 {
-    type Item = <<F as Fold<As, I::Item>>::D as Iterator>::Item;
+    type Item = <<F as Fold<I::Item, As>>::D as Iterator>::Item;
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
@@ -56,9 +56,9 @@ where
 
 pub struct NestedFoldRef<'a, AsO, AsI, OUT, INN, S>
 where
-    OUT: FoldRef<AsO, S>,
+    OUT: FoldRef<S, AsO>,
     OUT::D: Iterator,
-    INN: FoldRef<AsI, OUT::Item<'a>>,
+    INN: FoldRef<OUT::Item<'a>, AsI>,
     INN::D: Iterator,
     S: 'a,
 {
@@ -70,9 +70,9 @@ where
 
 impl<'a, AsO, AsI, OUT, INN, S> NestedFoldRef<'a, AsO, AsI, OUT, INN, S>
 where
-    OUT: FoldRef<AsO, S>,
+    OUT: FoldRef<S, AsO>,
     OUT::D: Iterator,
-    INN: FoldRef<AsI, OUT::Item<'a>>,
+    INN: FoldRef<OUT::Item<'a>, AsI>,
     INN::D: Iterator,
     S: 'a,
 {
@@ -88,9 +88,9 @@ where
 
 impl<'a, AsO, AsI, OUT, INN, S> Iterator for NestedFoldRef<'a, AsO, AsI, OUT, INN, S>
 where
-    OUT: FoldRef<AsO, S>,
+    OUT: FoldRef<S, AsO>,
     OUT::D: Iterator,
-    INN: FoldRef<AsI, OUT::Item<'a>>,
+    INN: FoldRef<OUT::Item<'a>, AsI>,
     INN::D: Iterator,
     S: 'a,
 {

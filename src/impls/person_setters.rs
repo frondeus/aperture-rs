@@ -2,7 +2,7 @@ use crate::{data::Person, prelude::*};
 
 #[derive(Clone)]
 pub struct PersonNameSetter;
-impl Setter<AsSetter, Person> for PersonNameSetter {
+impl Setter<Person> for PersonNameSetter {
     type O = String;
 
     fn set<F>(&self, mut source: Person, mut f: F) -> Person
@@ -13,7 +13,7 @@ impl Setter<AsSetter, Person> for PersonNameSetter {
         source
     }
 }
-impl SetterMut<AsSetter, Person> for PersonNameSetter {
+impl SetterMut<Person> for PersonNameSetter {
     fn set_mut<F>(&self, source: &mut Person, mut f: F)
     where
         F: FnMut(&mut Self::O) + Clone,
@@ -23,7 +23,7 @@ impl SetterMut<AsSetter, Person> for PersonNameSetter {
 }
 
 pub struct PersonMotherSetter;
-impl Setter<AsSetter, Person> for PersonMotherSetter {
+impl Setter<Person> for PersonMotherSetter {
     type O = Person;
 
     fn set<F>(&self, mut source: Person, f: F) -> Person
@@ -36,7 +36,7 @@ impl Setter<AsSetter, Person> for PersonMotherSetter {
         source
     }
 }
-impl SetterMut<AsSetter, Person> for PersonMotherSetter {
+impl SetterMut<Person> for PersonMotherSetter {
     fn set_mut<F>(&self, source: &mut Person, f: F)
     where
         F: FnMut(&mut Self::O) + Clone,
@@ -46,7 +46,7 @@ impl SetterMut<AsSetter, Person> for PersonMotherSetter {
 }
 
 pub struct PersonParentsSetter;
-impl Setter<AsSetter, Person> for PersonParentsSetter {
+impl Setter<Person> for PersonParentsSetter {
     type O = Vec<Person>;
 
     fn set<F>(&self, mut source: Person, mut f: F) -> Person

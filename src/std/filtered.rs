@@ -3,7 +3,7 @@ use crate::prelude::*;
 #[derive(Clone)]
 pub struct Filtered<Filter>(pub Filter);
 
-impl<S, Filter> Traversal<AsTraversal, S> for Filtered<Filter>
+impl<S, Filter> Traversal<S> for Filtered<Filter>
 where
     Filter: for<'a> FnMut(&'a S::Item) -> bool + Clone,
     S: IntoIterator + FromIterator<S::Item>,
@@ -26,7 +26,7 @@ where
             .collect()
     }
 }
-impl<S, Filter, T> TraversalMut<AsTraversal, S> for Filtered<Filter>
+impl<S, Filter, T> TraversalMut<S> for Filtered<Filter>
 where
     Filter: for<'a> FnMut(&'a T) -> bool + Clone,
     S: IntoIterator<Item = T> + FromIterator<T>,
@@ -43,7 +43,7 @@ where
         });
     }
 }
-impl<S, Filter, T> TraversalRef<AsTraversal, S> for Filtered<Filter>
+impl<S, Filter, T> TraversalRef<S> for Filtered<Filter>
 where
     Filter: for<'a> FnMut(&'a T) -> bool + Clone,
     S: IntoIterator<Item = T> + FromIterator<T>,

@@ -12,8 +12,8 @@ pub struct And<L1, L2, As, S>(pub L1, pub L2, PhantomData<As>, PhantomData<S>);
 
 impl<L1, L2, S1, S2, A1, A2> Then<(A1, A2), L2, (S1, S2)> for L1
 where
-    L1: Optics<A1, S1>,
-    L2: Optics<A2, S2>,
+    L1: Optics<S1, A1>,
+    L2: Optics<S2, A2>,
     A1: Default + std::fmt::Debug,
     A2: Default + std::fmt::Debug,
 {

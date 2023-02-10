@@ -2,7 +2,7 @@ use crate::prelude::*;
 
 #[derive(Debug, Default)]
 pub struct AsSetter;
-pub trait Setter<As, S> {
+pub trait Setter<S, As = AsSetter> {
     type O;
     fn set<F>(&self, source: S, f: F) -> S
     where
@@ -10,13 +10,13 @@ pub trait Setter<As, S> {
 }
 
 // If FnMut: FnOnce then SetterMut: Setter
-pub trait SetterMut<As, S>: Setter<As, S> {
+pub trait SetterMut<S, As = AsSetter>: Setter<S, As> {
     fn set_mut<F>(&self, source: &mut S, f: F)
     where
         F: FnMut(&mut Self::O) + Clone;
 }
 
-pub trait PSetter<As, S> {
+pub trait PSetter<S, As = AsSetter> {
     type O;
     type D;
     type T;
@@ -25,9 +25,9 @@ pub trait PSetter<As, S> {
         F: FnMut(Self::O) -> Self::T + Clone;
 }
 
-impl<X, As, S> PSetter<As, S> for X
+impl<X, As, S> PSetter<S, As> for X
 where
-    X: Setter<As, S>,
+    X: Setter<S, As>,
 {
     type O = X::O;
 
@@ -43,16 +43,16 @@ where
     }
 }
 
-impl<S, X> Optics<AsSetter, S> for X where X: Setter<AsSetter, S> {}
-// impl<S, X> Optics<AsSetter, S> for X where X: SetterMut<AsSetter, S> {}
+impl<S, X> Optics<S, AsSetter> for X where X: Setter<S> {}
+// impl<S, X> Optics<AsSetter, S> for X where X: SetterMut<S> {}
 
 macro_rules! impl_setter {
     ($as: ident, $(($l:ident, $r:ident),)*) => { impl_setter!(@ ($as, $as), $(($l, $r), ($r, $l)),*); };
     (@ $(($l:ident, $r:ident)),*) => {$(
-        impl<L1, L2, S, T> Setter<AsSetter, S> for And<L1, L2, ($l, $r), (S, T)>
+        impl<L1, L2, S, T> Setter<S> for And<L1, L2, ($l, $r), (S, T)>
         where
-            L1: Setter<$l, S, O = T>,
-            L2: Setter<$r, T>,
+            L1: Setter< S,$l, O = T>,
+            L2: Setter< T,$r>,
         {
             type O = L2::O;
 
@@ -63,10 +63,10 @@ macro_rules! impl_setter {
                 self.0.set(source, |o| self.1.set(o, f.clone()))
             }
         }
-        impl<L1, L2, S, T> SetterMut<AsSetter, S> for And<L1, L2, ($l, $r), (S, T)>
+        impl<L1, L2, S, T> SetterMut<S> for And<L1, L2, ($l, $r), (S, T)>
         where
-            L1: SetterMut<$l, S> + Setter<$l, S, O = T>,
-            L2: SetterMut<$r, T>,
+            L1: SetterMut< S, $l> + Setter< S,$l, O = T>,
+            L2: SetterMut< T, $r>,
         {
             fn set_mut<F>(&self, source: &mut S, f: F)
             where

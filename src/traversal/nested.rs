@@ -5,7 +5,7 @@ use super::{Traversal, TraversalRef};
 pub struct NestedTraversal<As, I, T>
 where
     I: Iterator,
-    T: Traversal<As, I::Item>,
+    T: Traversal<I::Item, As>,
     T::D: Iterator,
 {
     outer: I,
@@ -16,7 +16,7 @@ where
 impl<As, I, T> NestedTraversal<As, I, T>
 where
     I: Iterator,
-    T: Traversal<As, I::Item>,
+    T: Traversal<I::Item, As>,
     T::D: Iterator,
 {
     pub fn new(i: I, f: T) -> Self {
@@ -31,10 +31,10 @@ where
 impl<As, I, T> Iterator for NestedTraversal<As, I, T>
 where
     I: Iterator,
-    T: Traversal<As, I::Item>,
+    T: Traversal<I::Item, As>,
     T::D: Iterator,
 {
-    type Item = <<T as Traversal<As, I::Item>>::D as Iterator>::Item;
+    type Item = <<T as Traversal<I::Item, As>>::D as Iterator>::Item;
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
@@ -56,8 +56,8 @@ where
 
 pub struct NestedTraversalRef<'a, AsO, AsI, OUT, INN, S>
 where
-    OUT: TraversalRef<AsO, S>,
-    INN: TraversalRef<AsI, <OUT::D as Iterator>::Item>,
+    OUT: TraversalRef<S, AsO>,
+    INN: TraversalRef<<OUT::D as Iterator>::Item, AsI>,
     S: 'a,
     <OUT::D as Iterator>::Item: 'a,
     <INN::D as Iterator>::Item: 'a,
@@ -70,8 +70,8 @@ where
 
 impl<'a, AsO, AsI, OUT, INN, S> NestedTraversalRef<'a, AsO, AsI, OUT, INN, S>
 where
-    OUT: TraversalRef<AsO, S>,
-    INN: TraversalRef<AsI, <OUT::D as Iterator>::Item>,
+    OUT: TraversalRef<S, AsO>,
+    INN: TraversalRef<<OUT::D as Iterator>::Item, AsI>,
     S: 'a,
     <OUT::D as Iterator>::Item: 'a,
     <INN::D as Iterator>::Item: 'a,
@@ -88,8 +88,8 @@ where
 
 impl<'a, AsO, AsI, OUT, INN, S> Iterator for NestedTraversalRef<'a, AsO, AsI, OUT, INN, S>
 where
-    OUT: TraversalRef<AsO, S>,
-    INN: TraversalRef<AsI, <OUT::D as Iterator>::Item>,
+    OUT: TraversalRef<S, AsO>,
+    INN: TraversalRef<<OUT::D as Iterator>::Item, AsI>,
     S: 'a,
     <OUT::D as Iterator>::Item: 'a,
     <INN::D as Iterator>::Item: 'a,

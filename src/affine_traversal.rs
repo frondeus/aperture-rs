@@ -3,7 +3,7 @@ use crate::prelude::*;
 #[derive(Debug, Default)]
 pub struct AsAffineTraversal;
 
-pub trait AffineTraversal<As, S> {
+pub trait AffineTraversal<S, As = AsAffineTraversal> {
     type O;
 
     fn map_opt<T, F>(&self, source: S, f: F) -> Option<T>
@@ -22,14 +22,14 @@ pub trait AffineTraversal<As, S> {
         F: Clone + FnMut(Self::O) -> Self::O;
 }
 
-pub trait AffineTraversalMut<As, S>: AffineTraversal<As, S> {
+pub trait AffineTraversalMut<S, As = AsAffineTraversal>: AffineTraversal<S, As> {
     #[doc(hidden)]
     fn impl_set_mut<F>(&self, source: &mut S, f: F)
     where
         F: Clone + FnMut(&mut Self::O);
 }
 
-pub trait AffineTraversalRef<As, S>: AffineTraversalMut<As, S> {
+pub trait AffineTraversalRef<S, As = AsAffineTraversal>: AffineTraversalMut<S, As> {
     #[doc(hidden)]
     fn impl_preview_ref<'a>(&self, source: &'a S) -> Option<&'a Self::O>;
 
@@ -41,10 +41,10 @@ pub trait AffineTraversalRef<As, S>: AffineTraversalMut<As, S> {
     }
 }
 
-impl<S, X> Optics<AsAffineTraversal, S> for X where X: AffineTraversal<AsAffineTraversal, S> {}
-impl<X, S> AffineFold<AsAffineTraversal, S> for X
+impl<S, X> Optics<S, AsAffineTraversal> for X where X: AffineTraversal<S> {}
+impl<X, S> AffineFold<S, AsAffineTraversal> for X
 where
-    X: AffineTraversal<AsAffineTraversal, S>,
+    X: AffineTraversal<S>,
 {
     type T = X::O;
 
@@ -53,9 +53,9 @@ where
     }
 }
 
-impl<X, S> Traversal<AsAffineTraversal, S> for X
+impl<X, S> Traversal<S, AsAffineTraversal> for X
 where
-    X: AffineTraversal<AsAffineTraversal, S>,
+    X: AffineTraversal<S>,
 {
     type D = std::option::IntoIter<X::O>;
 
@@ -70,9 +70,9 @@ where
         self.impl_set(source, f)
     }
 }
-impl<X, S> Setter<AsAffineTraversal, S> for X
+impl<X, S> Setter<S, AsAffineTraversal> for X
 where
-    X: Traversal<AsAffineTraversal, S>,
+    X: Traversal<S, AsAffineTraversal>,
 {
     type O = <X::D as Iterator>::Item;
 
@@ -83,9 +83,9 @@ where
         self.impl_set(source, f)
     }
 }
-impl<X, S> Fold<AsAffineTraversal, S> for X
+impl<X, S> Fold<S, AsAffineTraversal> for X
 where
-    X: AffineFold<AsAffineTraversal, S>,
+    X: AffineFold<S, AsAffineTraversal>,
 {
     type D = std::option::IntoIter<X::T>;
 
@@ -94,9 +94,9 @@ where
     }
 }
 
-impl<X, S> TraversalMut<AsAffineTraversal, S> for X
+impl<X, S> TraversalMut<S, AsAffineTraversal> for X
 where
-    X: AffineTraversalMut<AsAffineTraversal, S>,
+    X: AffineTraversalMut<S>,
 {
     fn impl_set_mut<F>(&self, source: &mut S, f: F)
     where
@@ -105,9 +105,9 @@ where
         self.impl_set_mut(source, f);
     }
 }
-impl<X, S> SetterMut<AsAffineTraversal, S> for X
+impl<X, S> SetterMut<S, AsAffineTraversal> for X
 where
-    X: TraversalMut<AsAffineTraversal, S>,
+    X: TraversalMut<S, AsAffineTraversal>,
 {
     fn set_mut<F>(&self, source: &mut S, f: F)
     where
@@ -117,9 +117,9 @@ where
     }
 }
 
-impl<X, S> TraversalRef<AsAffineTraversal, S> for X
+impl<X, S> TraversalRef<S, AsAffineTraversal> for X
 where
-    X: AffineTraversalRef<AsAffineTraversal, S>,
+    X: AffineTraversalRef<S>,
     for<'a> X::O: 'a,
     for<'a> S: 'a,
 {
@@ -132,9 +132,9 @@ where
     }
 }
 
-impl<X, S> AffineFoldRef<AsAffineTraversal, S> for X
+impl<X, S> AffineFoldRef<S, AsAffineTraversal> for X
 where
-    X: AffineTraversalRef<AsAffineTraversal, S>,
+    X: AffineTraversalRef<S>,
     for<'a> X::O: 'a,
     for<'a> S: 'a,
 {
@@ -144,9 +144,9 @@ where
 }
 
 // #[cfg(feature = "gat")]
-impl<X, S> FoldRef<AsAffineTraversal, S> for X
+impl<X, S> FoldRef<S, AsAffineTraversal> for X
 where
-    X: AffineTraversalRef<AsAffineTraversal, S>,
+    X: AffineTraversalRef<S>,
     for<'a> X::O: 'a,
     for<'a> S: 'a,
 {
@@ -162,11 +162,11 @@ where
 macro_rules! impl_and {
  ($as: ident, $(($l:ident, $r:ident),)*) => { impl_and!(@ ($as, $as), $(($l, $r), ($r, $l),)*); };
  (@ $(($l:ident, $r:ident),)*) => {$(
-impl<L1, L2, S> AffineTraversal<AsAffineTraversal, S>
+impl<L1, L2, S> AffineTraversal<S>
     for And<L1, L2, ($l, $r), (S, L1::O)>
 where
-    L1: AffineTraversal<$l, S>,
-    L2: AffineTraversal<$r, L1::O>,
+    L1: AffineTraversal< S, $l>,
+    L2: AffineTraversal< L1::O, $r>,
 {
     type O = L2::O;
 
@@ -183,11 +183,11 @@ where
         self.0.set(source, |x| self.1.set(x, f.clone()))
     }
 }
-impl<L1, L2, S> AffineTraversalMut<AsAffineTraversal, S>
+impl<L1, L2, S> AffineTraversalMut<S>
     for And<L1, L2, ($l, $r), (S, L1::O)>
 where
-    L1: AffineTraversalMut<$l, S>,
-    L2: AffineTraversalMut<$r, L1::O>,
+    L1: AffineTraversalMut< S, $l>,
+    L2: AffineTraversalMut< L1::O, $r>,
 {
     fn impl_set_mut<F>(&self, source: &mut S, f: F)
     where
@@ -196,11 +196,11 @@ where
         self.0.impl_set_mut(source, |x| self.1.impl_set_mut(x, f.clone()));
     }
 }
-impl<L1, L2, S> AffineTraversalRef<AsAffineTraversal, S>
+impl<L1, L2, S> AffineTraversalRef<S>
     for And<L1, L2, ($l, $r), (S, L1::O)>
 where
-    L1: AffineTraversalRef<$l, S>,
-    L2: AffineTraversalRef<$r, L1::O>,
+    L1: AffineTraversalRef< S, $l>,
+    L2: AffineTraversalRef< L1::O, $r>,
     for<'a> L1: 'a
 {
     fn impl_preview_ref<'a>(&self, source: &'a S) -> Option<&'a Self::O> {

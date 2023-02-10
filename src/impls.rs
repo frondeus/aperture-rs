@@ -9,6 +9,7 @@ pub mod person_af;
 pub mod at;
 pub mod person_at;
 // GETTERS
+pub mod identity;
 pub mod unwrap;
 // LENSES
 pub mod person_lenses;

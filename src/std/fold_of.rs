@@ -2,7 +2,7 @@ use crate::prelude::*;
 
 pub struct FoldOf<F, TF>(pub F, pub TF);
 
-impl<S, F, T, TF> Fold<AsFold, S> for FoldOf<F, TF>
+impl<S, F, T, TF> Fold<S> for FoldOf<F, TF>
 where
     S: IntoIterator<Item = T>,
     F: FnMut(T, T) -> T,

@@ -3,7 +3,7 @@ use crate::prelude::*;
 #[derive(Clone, Copy)]
 pub struct _Some;
 
-impl<T> Prism<AsPrism, Option<T>> for _Some {
+impl<T> Prism<Option<T>> for _Some {
     type Variant = T;
 
     fn impl_preview(&self, source: Option<T>) -> Option<Self::Variant> {
@@ -21,7 +21,7 @@ impl<T> Prism<AsPrism, Option<T>> for _Some {
         source.map(f)
     }
 }
-impl<T> PrismMut<AsPrism, Option<T>> for _Some {
+impl<T> PrismMut<Option<T>> for _Some {
     fn impl_set_mut<F>(&self, source: &mut Option<T>, f: F)
     where
         F: Clone + FnMut(&mut Self::Variant),
@@ -29,7 +29,7 @@ impl<T> PrismMut<AsPrism, Option<T>> for _Some {
         source.as_mut().map(f);
     }
 }
-impl<T> PrismRef<AsPrism, Option<T>> for _Some {
+impl<T> PrismRef<Option<T>> for _Some {
     fn impl_preview_ref<'a>(&self, source: &'a Option<T>) -> Option<&'a Self::Variant> {
         source.as_ref()
     }
@@ -38,7 +38,7 @@ impl<T> PrismRef<AsPrism, Option<T>> for _Some {
 #[derive(Clone, Copy)]
 pub struct _None;
 
-impl<T> Prism<AsPrism, Option<T>> for _None {
+impl<T> Prism<Option<T>> for _None {
     type Variant = ();
 
     fn impl_preview(&self, source: Option<T>) -> Option<Self::Variant> {
@@ -59,14 +59,14 @@ impl<T> Prism<AsPrism, Option<T>> for _None {
         source
     }
 }
-impl<T> PrismMut<AsPrism, Option<T>> for _None {
+impl<T> PrismMut<Option<T>> for _None {
     fn impl_set_mut<F>(&self, _source: &mut Option<T>, _f: F)
     where
         F: Clone + FnMut(&mut Self::Variant),
     {
     }
 }
-impl<T> PrismRef<AsPrism, Option<T>> for _None {
+impl<T> PrismRef<Option<T>> for _None {
     fn impl_preview_ref<'a>(&self, source: &'a Option<T>) -> Option<&'a Self::Variant> {
         match source {
             Some(_) => None,

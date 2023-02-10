@@ -1,7 +1,7 @@
 use crate::prelude::*;
 
 pub struct At<Key>(Key);
-impl<O> AffineTraversal<AsAffineTraversal, Vec<O>> for At<usize> {
+impl<O> AffineTraversal<Vec<O>> for At<usize> {
     type O = O;
 
     fn impl_preview(&self, source: Vec<O>) -> Option<Self::O> {

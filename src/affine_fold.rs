@@ -3,19 +3,19 @@ use crate::prelude::*;
 #[derive(Debug, Default)]
 pub struct AsAffineFold;
 
-pub trait AffineFold<As, S> {
+pub trait AffineFold<S, As = AsAffineFold> {
     type T;
     fn preview(&self, source: S) -> Option<Self::T>;
 }
 
-pub trait AffineFoldRef<As, S>: AffineFold<As, S> {
+pub trait AffineFoldRef<S, As = AsAffineFold>: AffineFold<S, As> {
     fn preview_ref<'a>(&self, source: &'a S) -> Option<&'a Self::T>;
 }
 
-impl<S, X> Optics<AsAffineFold, S> for X where X: AffineFold<AsAffineFold, S> {}
-impl<X, S> Fold<AsAffineFold, S> for X
+impl<S, X> Optics<S, AsAffineFold> for X where X: AffineFold<S> {}
+impl<X, S> Fold<S, AsAffineFold> for X
 where
-    X: AffineFold<AsAffineFold, S>,
+    X: AffineFold<S>,
 {
     type D = std::option::IntoIter<X::T>;
 
@@ -25,9 +25,9 @@ where
 }
 
 // #[cfg(feature = "gat")]
-impl<X, S> FoldRef<AsAffineFold, S> for X
+impl<X, S> FoldRef<S, AsAffineFold> for X
 where
-    X: AffineFoldRef<AsAffineFold, S>,
+    X: AffineFoldRef<S>,
     for<'a> X::T: 'a,
     for<'a> S: 'a,
 {
@@ -40,10 +40,10 @@ where
     }
 }
 
-// impl<X, S, T> AffineFoldRef<AsAffineFold, S> for X
+// impl<X, S, T> AffineFoldRef<S> for X
 // where
-//     X: for<'b> AffineFold<AsAffineFold, &'b S, T = &'b T>,
-//     X: AffineFold<AsAffineFold, S, T = T>,
+//     X: for<'b> AffineFold<&'b S, T = &'b T>,
+//     X: AffineFold< S, T = T>,
 // {
 //     fn preview_ref<'a>(&self, source: &'a S) -> Option<&'a Self::T> {
 //         self.preview(source)
@@ -53,11 +53,11 @@ where
 macro_rules! impl_and {
  ($as: ident, $(($l:ident, $r:ident),)*) => { impl_and!(@ ($as, $as), $(($l, $r), ($r, $l)),*); };
  (@ $(($l:ident, $r:ident)),*) => {$(
-impl<L1, L2, S> AffineFold<AsAffineFold, S>
+impl<L1, L2, S> AffineFold<S>
     for And<L1, L2, ($l, $r), (S, L1::T)>
 where
-    L1: AffineFold<$l, S>,
-    L2: AffineFold<$r, L1::T>,
+    L1: AffineFold< S, $l>,
+    L2: AffineFold< L1::T, $r>,
 {
     type T = L2::T;
 
@@ -65,11 +65,11 @@ where
         self.0.preview(source).and_then(|t| self.1.preview(t))
     }
 }
-impl<L1, L2, S> AffineFoldRef<AsAffineFold, S>
+impl<L1, L2, S> AffineFoldRef<S>
     for And<L1, L2, ($l, $r), (S, L1::T)>
 where
-    L1: AffineFoldRef<$l, S>,
-    L2: AffineFoldRef<$r, L1::T>,
+    L1: AffineFoldRef< S, $l>,
+    L2: AffineFoldRef< L1::T, $r>,
     for<'a> L1::T: 'a
 {
     fn preview_ref<'a>(&self, source: &'a S) -> Option<&'a Self::T> {

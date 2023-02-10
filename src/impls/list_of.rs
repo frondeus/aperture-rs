@@ -3,7 +3,7 @@ use crate::prelude::*;
 #[derive(Clone)]
 pub struct ListOf;
 
-impl<S> Fold<AsFold, S> for ListOf
+impl<S> Fold<S> for ListOf
 where
     S: IntoIterator,
 {

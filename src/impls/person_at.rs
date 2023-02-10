@@ -3,7 +3,7 @@ use crate::{data::Person, prelude::*};
 #[derive(Clone)]
 pub struct PersonMotherAT;
 
-impl AffineTraversal<AsAffineTraversal, Person> for PersonMotherAT {
+impl AffineTraversal<Person> for PersonMotherAT {
     type O = Person;
 
     fn impl_preview(&self, source: Person) -> Option<Self::O> {
@@ -21,7 +21,7 @@ impl AffineTraversal<AsAffineTraversal, Person> for PersonMotherAT {
     }
 }
 
-impl AffineTraversalMut<AsAffineTraversal, Person> for PersonMotherAT {
+impl AffineTraversalMut<Person> for PersonMotherAT {
     fn impl_set_mut<F>(&self, source: &mut Person, f: F)
     where
         F: Clone + FnMut(&mut Self::O),
@@ -30,7 +30,7 @@ impl AffineTraversalMut<AsAffineTraversal, Person> for PersonMotherAT {
         parents.next().map(f);
     }
 }
-impl AffineTraversalRef<AsAffineTraversal, Person> for PersonMotherAT {
+impl AffineTraversalRef<Person> for PersonMotherAT {
     fn impl_preview_ref<'a>(&self, source: &'a Person) -> Option<&'a Self::O> {
         source.parents.first()
     }
@@ -39,7 +39,7 @@ impl AffineTraversalRef<AsAffineTraversal, Person> for PersonMotherAT {
 #[derive(Clone)]
 pub struct PersonParentsAT;
 
-impl AffineTraversal<AsAffineTraversal, Person> for PersonParentsAT {
+impl AffineTraversal<Person> for PersonParentsAT {
     type O = Vec<Person>;
 
     fn impl_preview(&self, source: Person) -> Option<Self::O> {

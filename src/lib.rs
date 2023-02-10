@@ -1,10 +1,9 @@
-#![cfg_attr(feature = "gat", feature(generic_associated_types))]
 #![deny(clippy::all)]
 
 #[cfg(test)]
 mod data;
 
-pub trait Optics<As: Default + ::std::fmt::Debug, S> {
+pub trait Optics<S, As: Default + ::std::fmt::Debug> {
     fn is_optics(&self) -> As {
         As::default()
     }
@@ -124,7 +123,7 @@ mod tests {
 
         fn impl_part<As, S, T>(telescope: T, test: &S)
         where
-            for<'a> T: FoldRef<As, S, Item<'a> = String>,
+            for<'a> T: FoldRef<S, As, Item<'a> = String>,
             T::D: Iterator<Item = String>,
         {
             // Note, that the function does not know from where the data comes from,
@@ -144,7 +143,7 @@ mod tests {
 
         fn impl_part_mut<As, S, T>(telescope: T, test: &mut S)
         where
-            T: SetterMut<As, S> + Setter<As, S, O = String>,
+            T: SetterMut<S, As> + Setter<S, As, O = String>,
         {
             // Note, that the function does not know from where the data comes from,
             // what is data structure, nor how the telescope looks like

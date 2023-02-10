@@ -3,7 +3,7 @@ use crate::prelude::*;
 #[derive(Clone)]
 pub struct Every;
 
-impl<S> Traversal<AsTraversal, S> for Every
+impl<S> Traversal<S> for Every
 where
     S: IntoIterator + FromIterator<S::Item>,
 {
@@ -20,7 +20,7 @@ where
     }
 }
 
-impl<S, T> TraversalMut<AsTraversal, S> for Every
+impl<S, T> TraversalMut<S> for Every
 where
     S: IntoIterator<Item = T> + FromIterator<T>,
     for<'a> &'a mut S: IntoIterator<Item = &'a mut T>,
@@ -34,7 +34,7 @@ where
         });
     }
 }
-impl<S, T> TraversalRef<AsTraversal, S> for Every
+impl<S, T> TraversalRef<S> for Every
 where
     S: IntoIterator<Item = T> + FromIterator<T>,
     for<'a> &'a mut S: IntoIterator<Item = &'a mut T>,

@@ -3,7 +3,7 @@ use crate::prelude::*;
 #[derive(Clone, Copy)]
 pub struct _Ok;
 
-impl<T, E> Prism<AsPrism, Result<T, E>> for _Ok {
+impl<T, E> Prism<Result<T, E>> for _Ok {
     type Variant = T;
 
     fn impl_preview(&self, source: Result<T, E>) -> Option<Self::Variant> {
@@ -22,7 +22,7 @@ impl<T, E> Prism<AsPrism, Result<T, E>> for _Ok {
     }
 }
 
-impl<T, E> PrismMut<AsPrism, Result<T, E>> for _Ok {
+impl<T, E> PrismMut<Result<T, E>> for _Ok {
     fn impl_set_mut<F>(&self, source: &mut Result<T, E>, f: F)
     where
         F: Clone + FnMut(&mut Self::Variant),
@@ -31,7 +31,7 @@ impl<T, E> PrismMut<AsPrism, Result<T, E>> for _Ok {
     }
 }
 
-impl<T, E> PrismRef<AsPrism, Result<T, E>> for _Ok {
+impl<T, E> PrismRef<Result<T, E>> for _Ok {
     fn impl_preview_ref<'a>(&self, source: &'a Result<T, E>) -> Option<&'a Self::Variant> {
         source.as_ref().ok()
     }
@@ -40,7 +40,7 @@ impl<T, E> PrismRef<AsPrism, Result<T, E>> for _Ok {
 #[derive(Clone, Copy)]
 pub struct _Err;
 
-impl<T, E> Prism<AsPrism, Result<T, E>> for _Err {
+impl<T, E> Prism<Result<T, E>> for _Err {
     type Variant = E;
 
     fn impl_preview(&self, source: Result<T, E>) -> Option<Self::Variant> {
@@ -59,7 +59,7 @@ impl<T, E> Prism<AsPrism, Result<T, E>> for _Err {
     }
 }
 
-impl<T, E> PrismMut<AsPrism, Result<T, E>> for _Err {
+impl<T, E> PrismMut<Result<T, E>> for _Err {
     fn impl_set_mut<F>(&self, source: &mut Result<T, E>, f: F)
     where
         F: Clone + FnMut(&mut Self::Variant),
@@ -68,7 +68,7 @@ impl<T, E> PrismMut<AsPrism, Result<T, E>> for _Err {
     }
 }
 
-impl<T, E> PrismRef<AsPrism, Result<T, E>> for _Err {
+impl<T, E> PrismRef<Result<T, E>> for _Err {
     fn impl_preview_ref<'a>(&self, source: &'a Result<T, E>) -> Option<&'a Self::Variant> {
         source.as_ref().err()
     }

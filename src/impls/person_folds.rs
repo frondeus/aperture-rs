@@ -2,7 +2,7 @@ use crate::{data::Person, prelude::*};
 
 #[derive(Clone)]
 pub struct PersonParentsFold;
-impl Fold<AsFold, Person> for PersonParentsFold {
+impl Fold<Person> for PersonParentsFold {
     type D = std::vec::IntoIter<Person>;
 
     fn fold(&self, source: Person) -> Self::D {
@@ -10,7 +10,7 @@ impl Fold<AsFold, Person> for PersonParentsFold {
     }
 }
 // #[cfg(feature = "gat")]
-impl FoldRef<AsFold, Person> for PersonParentsFold {
+impl FoldRef<Person> for PersonParentsFold {
     type Item<'a> = Person;
 
     type DRef<'a> = std::slice::Iter<'a, Person>;
@@ -22,7 +22,7 @@ impl FoldRef<AsFold, Person> for PersonParentsFold {
 
 #[derive(Clone, Default)]
 pub struct PersonParentsFoldRef<'a>(std::marker::PhantomData<&'a ()>);
-impl<'a> Fold<AsFold, Person> for PersonParentsFoldRef<'a> {
+impl<'a> Fold<Person> for PersonParentsFoldRef<'a> {
     type D = std::vec::IntoIter<Person>;
 
     fn fold(&self, source: Person) -> Self::D {
@@ -30,7 +30,7 @@ impl<'a> Fold<AsFold, Person> for PersonParentsFoldRef<'a> {
     }
 }
 // #[cfg(not(feature = "gat"))]
-// impl<'a> FoldRef<'a, AsFold, Person> for PersonParentsFoldRef<'a> {
+// impl<'a> FoldRef<'a, Person> for PersonParentsFoldRef<'a> {
 //     type DRef = std::slice::Iter<'a, Person>;
 
 //     fn fold_ref(&self, source: &'a Person) -> Self::DRef {
@@ -40,7 +40,7 @@ impl<'a> Fold<AsFold, Person> for PersonParentsFoldRef<'a> {
 
 #[derive(Clone)]
 pub struct PersonGrandParentsFold;
-impl Fold<AsFold, Person> for PersonGrandParentsFold {
+impl Fold<Person> for PersonGrandParentsFold {
     type D = std::vec::IntoIter<Vec<Person>>;
 
     fn fold(&self, source: Person) -> Self::D {

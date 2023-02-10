@@ -8,9 +8,8 @@ members = ["derive", "."]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-default = ["derive", "gat"]
+default = ["derive"]
 derive = ["dep:aperture-derive"]
-gat = []
 
 [dependencies]
 aperture-derive = { path = "derive", optional = true }

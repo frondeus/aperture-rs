@@ -6,7 +6,7 @@ use crate::{
 #[derive(Clone)]
 pub struct PersonMotherAF;
 
-impl AffineFold<AsAffineFold, Person> for PersonMotherAF {
+impl AffineFold<Person> for PersonMotherAF {
     type T = Person;
 
     fn preview(&self, source: Person) -> Option<Self::T> {
@@ -14,7 +14,7 @@ impl AffineFold<AsAffineFold, Person> for PersonMotherAF {
     }
 }
 
-impl AffineFoldRef<AsAffineFold, Person> for PersonMotherAF {
+impl AffineFoldRef<Person> for PersonMotherAF {
     fn preview_ref<'a>(&self, source: &'a Person) -> Option<&'a Self::T> {
         source.parents.first()
     }
@@ -30,7 +30,7 @@ impl AffineFoldRef<AsAffineFold, Person> for PersonMotherAF {
 #[derive(Clone)]
 pub struct PersonParentsAF;
 
-impl AffineFold<AsAffineFold, Person> for PersonParentsAF {
+impl AffineFold<Person> for PersonParentsAF {
     type T = Vec<Person>;
 
     fn preview(&self, source: Person) -> Option<Self::T> {

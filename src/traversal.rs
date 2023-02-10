@@ -3,7 +3,7 @@ use crate::prelude::*;
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct AsTraversal;
 
-pub trait Traversal<As, S> {
+pub trait Traversal<S, As = AsTraversal> {
     type D: Iterator;
     fn traverse<F, T>(&self, source: S, f: F) -> std::iter::Map<Self::D, F>
     where
@@ -22,9 +22,9 @@ pub trait Traversal<As, S> {
 }
 
 // #[cfg(feature = "gat")]
-pub trait TraversalRef<As, S>
+pub trait TraversalRef<S, As = AsTraversal>
 where
-    Self: TraversalMut<As, S>,
+    Self: TraversalMut<S, As>,
 {
     type DRef<'a>: Iterator<Item = &'a <Self::D as Iterator>::Item>
     where
@@ -41,18 +41,18 @@ where
     }
 }
 
-pub trait TraversalMut<As, S>: Traversal<As, S> {
+pub trait TraversalMut<S, As = AsTraversal>: Traversal<S, As> {
     #[doc(hidden)]
     fn impl_set_mut<F>(&self, source: &mut S, f: F)
     where
         F: Clone + FnMut(&mut <Self::D as Iterator>::Item);
 }
 
-impl<S, X> Optics<AsTraversal, S> for X where X: Traversal<AsTraversal, S> {}
+impl<S, X> Optics<S, AsTraversal> for X where X: Traversal<S> {}
 
-impl<X, S> Fold<AsTraversal, S> for X
+impl<X, S> Fold<S, AsTraversal> for X
 where
-    X: Traversal<AsTraversal, S>,
+    X: Traversal<S>,
 {
     type D = X::D;
 
@@ -61,9 +61,9 @@ where
     }
 }
 
-impl<X, S> Setter<AsTraversal, S> for X
+impl<X, S> Setter<S, AsTraversal> for X
 where
-    X: Traversal<AsTraversal, S>,
+    X: Traversal<S>,
 {
     type O = <X::D as Iterator>::Item;
     fn set<F>(&self, source: S, f: F) -> S
@@ -74,9 +74,9 @@ where
     }
 }
 
-impl<X, S> SetterMut<AsTraversal, S> for X
+impl<X, S> SetterMut<S, AsTraversal> for X
 where
-    X: TraversalMut<AsTraversal, S>,
+    X: TraversalMut<S>,
 {
     fn set_mut<F>(&self, source: &mut S, f: F)
     where
@@ -86,9 +86,9 @@ where
     }
 }
 
-impl<X, S> FoldRef<AsTraversal, S> for X
+impl<X, S> FoldRef<S, AsTraversal> for X
 where
-    X: TraversalRef<AsTraversal, S>,
+    X: TraversalRef<S>,
     X::D: Iterator,
     for<'a> <X::D as Iterator>::Item: 'a,
 {
@@ -96,7 +96,7 @@ where
         self.impl_fold_ref(source)
     }
 
-    type Item<'a> = <<X as Fold<AsTraversal, S>>::D as Iterator>::Item
+    type Item<'a> = <<X as Fold<S, AsTraversal>>::D as Iterator>::Item
     where
         S: 'a;
 
@@ -108,11 +108,11 @@ where
 macro_rules! impl_and {
  ($as: ident, $(($l:ident, $r:ident),)*) => { impl_and!(@ ($as, $as), $(($l, $r), ($r, $l)),*); };
  (@ $(($l:ident, $r:ident)),*) => {$(
-impl<L1, L2, S> Traversal<AsTraversal, S>
+impl<L1, L2, S> Traversal<S>
     for And<L1, L2, ($l, $r), (S, <L1::D as Iterator>::Item)>
 where
-    L1: Traversal<$l, S>,
-    L2: Clone + Traversal<$r, <L1::D as Iterator>::Item>,
+    L1: Traversal<S, $l>,
+    L2: Clone + Traversal<<L1::D as Iterator>::Item, $r>,
 {
     type D = nested::NestedTraversal<$r, L1::D, L2>;
 
@@ -127,11 +127,11 @@ where
         self.0.impl_set(source, |x| self.1.impl_set(x, f.clone()))
     }
 }
-impl<L1, L2, S> TraversalMut<AsTraversal, S>
+impl<L1, L2, S> TraversalMut<S>
     for And<L1, L2, ($l, $r), (S, <L1::D as Iterator>::Item)>
 where
-    L1: TraversalMut<$l, S>,
-    L2: Clone + TraversalMut<$r, <L1::D as Iterator>::Item>,
+    L1: TraversalMut<S, $l>,
+    L2: Clone + TraversalMut<<L1::D as Iterator>::Item, $r>,
 {
     fn impl_set_mut<F>(&self, source: &mut S, f: F)
     where
@@ -140,14 +140,13 @@ where
         self.0.impl_set_mut(source, |x| self.1.impl_set_mut(x, f.clone()))
     }
 }
-impl<L1, L2, S> TraversalRef<AsTraversal, S>
+impl<L1, L2, S> TraversalRef< S>
     for And<L1, L2, ($l, $r), (S, <L1::D as Iterator>::Item)>
 where
-    // Self: Traversal<AsTraversal, S> + TraversalMut<AsTraversal, S>,
-    L1: TraversalMut<$l, S>,
-    L2: Clone + TraversalMut<$r, <L1::D as Iterator>::Item>,
-    L1: TraversalRef<$l, S>,
-    L2: TraversalRef<$r, <L1::D as Iterator>::Item>,
+    L1: TraversalMut<S, $l>,
+    L2: Clone + TraversalMut<<L1::D as Iterator>::Item, $r>,
+    L1: TraversalRef<S, $l>,
+    L2: TraversalRef<<L1::D as Iterator>::Item, $r>,
 
     for<'a> <L1::D as Iterator>::Item: 'a,
     for<'a> <L2::D as Iterator>::Item: 'a

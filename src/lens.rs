@@ -4,7 +4,7 @@ use crate::prelude::*;
 
 #[derive(Debug, Default)]
 pub struct AsLens;
-pub trait Lens<As, S> {
+pub trait Lens<S, As = AsLens> {
     type View;
     #[doc(hidden)]
     fn impl_view(&self, source: S) -> Self::View;
@@ -18,12 +18,12 @@ pub trait Lens<As, S> {
     fn impl_set<F: Clone + FnMut(Self::View) -> Self::View>(&self, source: S, f: F) -> S;
 }
 
-pub trait LensMut<As, S>: Lens<As, S> {
+pub trait LensMut<S, As = AsLens>: Lens<S, As> {
     #[doc(hidden)]
     fn impl_set_mut<F: Clone + FnMut(&mut Self::View)>(&self, source: &mut S, f: F);
 }
 
-pub trait LensRef<As, S>: LensMut<As, S> {
+pub trait LensRef<S, As = AsLens>: LensMut<S, As> {
     #[doc(hidden)]
     fn impl_view_ref<'a>(&self, source: &'a S) -> &'a Self::View;
 
@@ -33,15 +33,15 @@ pub trait LensRef<As, S>: LensMut<As, S> {
     }
 }
 
-impl<S, X> Optics<AsLens, S> for X where X: Lens<AsLens, S> {}
+impl<S, X> Optics<S, AsLens> for X where X: Lens<S> {}
 
-impl<X, S> Getter<AsLens, S> for X
+impl<X, S> Getter<S, AsLens> for X
 where
-    X: Lens<AsLens, S>,
+    X: Lens<S>,
 {
     type T = X::View;
 
-    fn view(&self, source: S) -> <Self as Getter<AsLens, S>>::T {
+    fn view(&self, source: S) -> <Self as Getter<S, AsLens>>::T {
         self.impl_view(source)
     }
 
@@ -50,9 +50,9 @@ where
     }
 }
 
-impl<X, S> AffineFold<AsLens, S> for X
+impl<X, S> AffineFold<S, AsLens> for X
 where
-    X: Getter<AsLens, S>,
+    X: Getter<S, AsLens>,
 {
     type T = X::T;
 
@@ -60,9 +60,9 @@ where
         self.impl_preview(source)
     }
 }
-impl<X, S> Fold<AsLens, S> for X
+impl<X, S> Fold<S, AsLens> for X
 where
-    X: AffineFold<AsLens, S>,
+    X: AffineFold<S, AsLens>,
 {
     type D = std::option::IntoIter<X::T>;
 
@@ -70,9 +70,9 @@ where
         self.preview(source).into_iter()
     }
 }
-impl<X, S> AffineTraversal<AsLens, S> for X
+impl<X, S> AffineTraversal<S, AsLens> for X
 where
-    X: Lens<AsLens, S>,
+    X: Lens<S>,
 {
     type O = X::View;
 
@@ -87,9 +87,9 @@ where
         Lens::impl_set(self, source, f)
     }
 }
-impl<X, S> Traversal<AsLens, S> for X
+impl<X, S> Traversal<S, AsLens> for X
 where
-    X: AffineTraversal<AsLens, S>,
+    X: AffineTraversal<S, AsLens>,
 {
     type D = std::option::IntoIter<X::O>;
 
@@ -104,9 +104,9 @@ where
         self.impl_set(source, f)
     }
 }
-impl<X, S> Setter<AsLens, S> for X
+impl<X, S> Setter<S, AsLens> for X
 where
-    X: Traversal<AsLens, S>,
+    X: Traversal<S, AsLens>,
 {
     type O = <X::D as Iterator>::Item;
 
@@ -117,9 +117,9 @@ where
         self.impl_set(source, f)
     }
 }
-impl<X, S> AffineTraversalMut<AsLens, S> for X
+impl<X, S> AffineTraversalMut<S, AsLens> for X
 where
-    X: LensMut<AsLens, S>,
+    X: LensMut<S>,
 {
     fn impl_set_mut<F>(&self, source: &mut S, f: F)
     where
@@ -128,9 +128,9 @@ where
         self.impl_set_mut(source, f);
     }
 }
-impl<X, S> TraversalMut<AsLens, S> for X
+impl<X, S> TraversalMut<S, AsLens> for X
 where
-    X: AffineTraversalMut<AsLens, S>,
+    X: AffineTraversalMut<S, AsLens>,
 {
     fn impl_set_mut<F>(&self, source: &mut S, f: F)
     where
@@ -139,9 +139,9 @@ where
         self.impl_set_mut(source, f);
     }
 }
-impl<X, S> SetterMut<AsLens, S> for X
+impl<X, S> SetterMut<S, AsLens> for X
 where
-    X: TraversalMut<AsLens, S>,
+    X: TraversalMut<S, AsLens>,
 {
     fn set_mut<F>(&self, source: &mut S, f: F)
     where
@@ -151,11 +151,11 @@ where
     }
 }
 
-impl<X, S> GetterRef<AsLens, S> for X
+impl<X, S> GetterRef<S, AsLens> for X
 where
-    X: LensRef<AsLens, S>,
+    X: LensRef<S>,
 {
-    fn view_ref<'a>(&self, source: &'a S) -> &'a <Self as Getter<AsLens, S>>::T {
+    fn view_ref<'a>(&self, source: &'a S) -> &'a <Self as Getter<S, AsLens>>::T {
         self.impl_view_ref(source)
     }
 
@@ -164,17 +164,17 @@ where
     }
 }
 
-impl<X, S> AffineFoldRef<AsLens, S> for X
+impl<X, S> AffineFoldRef<S, AsLens> for X
 where
-    X: GetterRef<AsLens, S>,
+    X: GetterRef<S, AsLens>,
 {
     fn preview_ref<'a>(&self, source: &'a S) -> Option<&'a Self::T> {
         self.impl_preview_ref(source)
     }
 }
-impl<X, S> FoldRef<AsLens, S> for X
+impl<X, S> FoldRef<S, AsLens> for X
 where
-    X: AffineFoldRef<AsLens, S>,
+    X: AffineFoldRef<S, AsLens>,
     for<'a> X::T: 'a,
     for<'a> S: 'a,
 {
@@ -186,17 +186,17 @@ where
         self.preview_ref(source).into_iter()
     }
 }
-impl<X, S> AffineTraversalRef<AsLens, S> for X
+impl<X, S> AffineTraversalRef<S, AsLens> for X
 where
-    X: LensRef<AsLens, S>,
+    X: LensRef<S>,
 {
     fn impl_preview_ref<'a>(&self, source: &'a S) -> Option<&'a Self::O> {
         self.impl_preview_ref(source)
     }
 }
-impl<X, S> TraversalRef<AsLens, S> for X
+impl<X, S> TraversalRef<S, AsLens> for X
 where
-    X: AffineTraversalRef<AsLens, S>,
+    X: AffineTraversalRef<S, AsLens>,
 {
     type DRef<'a> = std::option::IntoIter<&'a X::O>
     where
@@ -211,10 +211,10 @@ where
 macro_rules! impl_and {
  ($as: ident, $(($l:ident, $r:ident),)*) => { impl_and!(@ ($as, $as), $(($l, $r), ($r, $l),)*); };
  (@ $(($l:ident, $r:ident),)*) => {$(
-impl<L1, L2, S> Lens<AsLens, S> for And<L1, L2, ($l, $r), (S, L1::View)>
+impl<L1, L2, S> Lens<S> for And<L1, L2, ($l, $r), (S, L1::View)>
 where
-    L1: Lens<$l, S>,
-    L2: Lens<$r, L1::View>,
+    L1: Lens< S, $l>,
+    L2: Lens< L1::View, $r>,
 {
     type View = L2::View;
 
@@ -226,19 +226,19 @@ where
         self.0.set(source, |p| self.1.set(p, f.clone()))
     }
 }
-impl<L1, L2, S> LensMut<AsLens, S> for And<L1, L2, ($l, $r), (S, L1::View)>
+impl<L1, L2, S> LensMut<S> for And<L1, L2, ($l, $r), (S, L1::View)>
 where
-    L1: LensMut<$l, S>,
-    L2: LensMut<$r, L1::View>,
+    L1: LensMut< S, $l>,
+    L2: LensMut< L1::View, $r>,
 {
     fn impl_set_mut<F: Clone + FnMut(&mut Self::View)>(&self, source: &mut S, f: F) {
         self.0.impl_set_mut(source, |p|  self.1.impl_set_mut(p, f.clone())   )
     }
 }
-impl<L1, L2, S> LensRef<AsLens, S> for And<L1, L2, ($l, $r), (S, L1::View)>
+impl<L1, L2, S> LensRef< S> for And<L1, L2, ($l, $r), (S, L1::View)>
 where
-    L1: LensRef<$l, S>,
-    L2: LensRef<$r, L1::View>,
+    L1: LensRef< S, $l>,
+    L2: LensRef< L1::View, $r>,
     for<'a> L1::View: 'a
 {
     #[doc(hidden)]

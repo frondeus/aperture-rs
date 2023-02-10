@@ -3,26 +3,15 @@ use crate::prelude::*;
 #[derive(Debug, Default)]
 pub struct AsFold;
 
-pub trait Fold<As, S> {
+pub trait Fold<S, As = AsFold> {
     type D;
 
     fn fold(&self, source: S) -> Self::D;
 }
 
-// #[cfg(not(feature = "gat"))]
-// pub trait FoldRef<'a, As, S>
-// where
-//     Self: Fold<As, S>,
-//     Self::D: Iterator,
-// {
-//     type DRef: 'a;
-//     fn fold_ref(&self, source: &'a S) -> Self::DRef;
-// }
-
-// #[cfg(feature = "gat")]
-pub trait FoldRef<As, S>
+pub trait FoldRef<S, As = AsFold>
 where
-    Self: Fold<As, S>,
+    Self: Fold<S, As>,
     Self::D: Iterator,
 {
     type Item<'a>: 'a
@@ -38,7 +27,7 @@ where
 mod nested;
 pub use nested::*;
 
-impl<S, X> Optics<AsFold, S> for X where X: Fold<AsFold, S> {}
+impl<S, X> Optics<S, AsFold> for X where X: Fold<S> {}
 // macro_rules! impl_and {
 // ($as: ident, $(($l:ident, $r:ident),)*) => { impl_and!(@ ($as, $as), $(($l, $r), ($r, $l)),*); };
 // (@ $(($l:ident, $r:ident)),*) => {$(
@@ -47,11 +36,11 @@ impl<S, X> Optics<AsFold, S> for X where X: Fold<AsFold, S> {}
 macro_rules! impl_fold {
     ($as: ident, $(($l:ident, $r:ident),)*) => { impl_fold!(@ ($as, $as), $(($l, $r), ($r, $l)),*); };
     (@ $(($l:ident, $r:ident)),*) => {$(
-        impl<L1, L2, S> Fold<AsFold, S> for And<L1, L2, ($l, $r), (S, <L1::D as Iterator>::Item)>
+        impl<L1, L2, S> Fold<S> for And<L1, L2, ($l, $r), (S, <L1::D as Iterator>::Item)>
         where
-            L1: Fold<$l, S>,
+            L1: Fold<S, $l>,
             L1::D: Iterator,
-            L2: Fold<$r, <L1::D as Iterator>::Item>,
+            L2: Fold<<L1::D as Iterator>::Item, $r>,
             L2: Clone,
             L2::D: Iterator,
         {
@@ -61,20 +50,20 @@ macro_rules! impl_fold {
                 nested::NestedFold::new(self.0.fold(source), self.1.clone())
             }
         }
-        impl<L1, L2, S> FoldRef<AsFold, S> for And<L1, L2, ($l, $r), (S, <L1::D as Iterator>::Item)>
+        impl<L1, L2, S> FoldRef<S> for And<L1, L2, ($l, $r), (S, <L1::D as Iterator>::Item)>
         where
-            L1: Fold<$l, S>,
+            L1: Fold<S, $l>,
             L1::D: Iterator,
-            L2: Fold<$r, <L1::D as Iterator>::Item>,
+            L2: Fold<<L1::D as Iterator>::Item, $r>,
             L2: Clone,
-            <L2 as Fold<$r, <L1::D as Iterator>::Item>>::D: Iterator,
+            <L2 as Fold<<L1::D as Iterator>::Item, $r>>::D: Iterator,
 
-            L1: FoldRef<$l, S>,
-            for<'a> L2: FoldRef<$r, L1::Item<'a>>,
-            for<'a> <L2 as Fold<$r, L1::Item<'a> >>::D: Iterator,
+            L1: FoldRef<S, $l>,
+            for<'a> L2: FoldRef< L1::Item<'a>, $r>,
+            for<'a> <L2 as Fold<L1::Item<'a>, $r>>::D: Iterator,
             for<'a> S: 'a
         {
-            type Item<'a> = <L2 as FoldRef<$r, L1::Item<'a>>>::Item<'a>;
+            type Item<'a> = <L2 as FoldRef<L1::Item<'a>, $r>>::Item<'a>;
 
             type DRef<'a> = nested::NestedFoldRef<
                 'a,
