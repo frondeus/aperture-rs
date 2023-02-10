@@ -2,10 +2,10 @@ use crate::prelude::*;
 
 #[derive(Default, Debug, Clone)]
 pub struct Unwrap;
-impl<T> Getter<AsGetter, Option<T>> for Unwrap {
+impl<T> Getter<Option<T>> for Unwrap {
     type T = T;
 
-    fn view(&self, source: Option<T>) -> <Self as Getter<AsGetter, Option<T>>>::T {
+    fn view(&self, source: Option<T>) -> <Self as Getter<Option<T>>>::T {
         source.unwrap()
     }
 
@@ -13,8 +13,8 @@ impl<T> Getter<AsGetter, Option<T>> for Unwrap {
         source
     }
 }
-impl<T> GetterRef<AsGetter, Option<T>> for Unwrap {
-    fn view_ref<'a>(&self, source: &'a Option<T>) -> &'a <Self as Getter<AsGetter, Option<T>>>::T {
+impl<T> GetterRef<Option<T>> for Unwrap {
+    fn view_ref<'a>(&self, source: &'a Option<T>) -> &'a <Self as Getter<Option<T>>>::T {
         source.as_ref().unwrap()
     }
 

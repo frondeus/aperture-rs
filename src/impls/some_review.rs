@@ -3,7 +3,7 @@ use crate::prelude::*;
 #[derive(Clone)]
 pub struct SomeR;
 
-impl<T> Review<AsReview, Option<T>> for SomeR {
+impl<T> Review<Option<T>> for SomeR {
     type T = T;
 
     fn review(&self, t: Self::T) -> Option<T> {

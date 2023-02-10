@@ -32,7 +32,6 @@ pub mod prism;
 // pub mod iso;
 
 // Combinators
-#[cfg(test)]
 pub mod impls;
 pub mod std;
 pub mod then;

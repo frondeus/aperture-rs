@@ -3,7 +3,7 @@ use crate::prelude::*;
 #[derive(Clone)]
 pub struct Some;
 
-impl<T> Prism<AsPrism, Option<T>> for Some {
+impl<T> Prism<Option<T>> for Some {
     type Variant = T;
 
     fn impl_preview(&self, source: Option<T>) -> Option<Self::Variant> {
@@ -21,7 +21,7 @@ impl<T> Prism<AsPrism, Option<T>> for Some {
         source.map(f)
     }
 }
-impl<T> PrismMut<AsPrism, Option<T>> for Some {
+impl<T> PrismMut<Option<T>> for Some {
     fn impl_set_mut<F>(&self, source: &mut Option<T>, f: F)
     where
         F: Clone + FnMut(&mut Self::Variant),
@@ -29,7 +29,7 @@ impl<T> PrismMut<AsPrism, Option<T>> for Some {
         source.as_mut().map(f);
     }
 }
-impl<T> PrismRef<AsPrism, Option<T>> for Some {
+impl<T> PrismRef<Option<T>> for Some {
     fn impl_preview_ref<'a>(&self, source: &'a Option<T>) -> Option<&'a Self::Variant> {
         source.as_ref()
     }
